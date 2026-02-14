@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { ArrowLeft, Plus, X, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,8 @@ import {
 import { toast } from "sonner";
 import { useDiseaseDocumentStore } from "@/stores/diseaseDocumentStore";
 import { useDiseaseStore } from "@/stores/diseaseStore";
+import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
+import type { DiseaseDocument } from "@/stores/diseaseDocumentStore";
 
 interface SignatureField {
   id: number;
@@ -40,6 +42,22 @@ export default function ConsentFormEditPage() {
   const [fields, setFields] = useState<SignatureField[]>([]);
   const [nextFieldId, setNextFieldId] = useState(1);
   const [initialized, setInitialized] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  const buildPreviewDoc = (): DiseaseDocument => ({
+    id: editingId ?? 0,
+    name: title || "（未命名）",
+    disease: disease || "（未選擇）",
+    category: "同意書",
+    fields: fields.map((f) => ({
+      id: f.id,
+      name: f.name,
+      type: f.type === "checkbox" ? "勾選框" : "文字輸入",
+      description: f.description,
+    })),
+    content,
+    createdAt: "",
+  });
 
   // Load existing document when editing
   useEffect(() => {
@@ -321,11 +339,21 @@ export default function ConsentFormEditPage() {
           >
             取消
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setPreviewOpen(true)}>
+            <Eye className="h-3.5 w-3.5 mr-1" />
+            預覽
+          </Button>
           <Button size="sm" onClick={handleSave}>
             儲存
           </Button>
         </div>
       </div>
+
+      <DocumentPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        document={previewOpen ? buildPreviewDoc() : null}
+      />
     </div>
   );
 }
