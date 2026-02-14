@@ -95,10 +95,10 @@ export default function ClinicsPage() {
 
   return (
     <div>
-      <div className="mb-1 text-[13px] text-muted-foreground">
+      <div className="mb-1 text-sm text-muted-foreground">
         診所管理 &gt; 診所列表
       </div>
-      <h1 className="text-[22px] font-bold mb-5">診所列表</h1>
+      <h1 className="text-2xl font-semibold mb-5">診所列表</h1>
 
       <div className="bg-card rounded-lg p-5 mb-4 shadow-sm">
         <Label className="text-[14px] font-medium mb-2 block">診所名稱</Label>
@@ -136,16 +136,16 @@ export default function ClinicsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[50%] text-[13px] text-muted-foreground font-medium">診所名稱</TableHead>
-              <TableHead className="text-[13px] text-muted-foreground font-medium">病患人數</TableHead>
-              <TableHead className="text-right text-[13px] text-muted-foreground font-medium">功能</TableHead>
+              <TableHead className="w-[50%] text-sm text-muted-foreground font-medium">診所名稱</TableHead>
+              <TableHead className="text-sm text-muted-foreground font-medium">病患人數</TableHead>
+              <TableHead className="text-right text-sm text-muted-foreground font-medium">功能</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.map((clinic) => (
               <TableRow key={clinic.id}>
-                <TableCell className="font-medium text-[14px]">{clinic.name}</TableCell>
-                <TableCell className="text-[14px]">{clinic.patientCount}</TableCell>
+                <TableCell className="font-medium text-sm text-foreground">{clinic.name}</TableCell>
+                <TableCell className="text-sm text-foreground">{clinic.patientCount}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
                     <Button size="sm" onClick={() => handleEdit(clinic)} className="text-[13px]">
