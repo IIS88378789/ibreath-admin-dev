@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Pencil, X, GripVertical, FileText } from "lucide-react";
+import { Plus, Pencil, X, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,53 +27,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-
-interface FormField {
-  id: number;
-  name: string;
-  type: string;
-  description: string;
-}
-
-interface DiseaseForm {
-  id: number;
-  name: string;
-  disease: string;
-  fields: FormField[];
-  createdAt: string;
-}
+import { useDiseaseDocumentStore, type FormField } from "@/stores/diseaseDocumentStore";
 
 const fieldTypes = ["文字", "數字", "單選", "多選", "日期", "下拉選單", "文字區域"];
-
 const diseases = ["氣喘", "慢性阻塞性肺病", "過敏性氣喘", "肺氣腫", "慢性支氣管炎"];
-
-const initialForms: DiseaseForm[] = [
-  {
-    id: 1,
-    name: "氣喘評估表",
-    disease: "氣喘",
-    fields: [
-      { id: 1, name: "症狀頻率", type: "單選", description: "過去一週的症狀發生頻率" },
-      { id: 2, name: "用藥次數", type: "數字", description: "每日使用吸入器次數" },
-    ],
-    createdAt: "2025-01-10",
-  },
-  {
-    id: 2,
-    name: "肺功能檢測紀錄",
-    disease: "慢性阻塞性肺病",
-    fields: [
-      { id: 1, name: "FEV1", type: "數字", description: "第一秒用力呼氣量" },
-      { id: 2, name: "FVC", type: "數字", description: "用力肺活量" },
-      { id: 3, name: "檢測日期", type: "日期", description: "進行檢測的日期" },
-    ],
-    createdAt: "2025-02-05",
-  },
-];
 
 export default function DiseaseFormsPage() {
   const navigate = useNavigate();
-  const [forms, setForms] = useState<DiseaseForm[]>(initialForms);
+  const { documents, addDocument, updateDocument, deleteDocument } = useDiseaseDocumentStore();
   const [diseaseFilter, setDiseaseFilter] = useState("all");
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -84,11 +45,11 @@ export default function DiseaseFormsPage() {
   const [nextFieldId, setNextFieldId] = useState(1);
 
   const filtered =
-    diseaseFilter === "all" ? forms : forms.filter((f) => f.disease === diseaseFilter);
+    diseaseFilter === "all" ? documents : documents.filter((f) => f.disease === diseaseFilter);
 
   const handleDelete = (id: number) => {
-    setForms((prev) => prev.filter((f) => f.id !== id));
-    toast.success("已刪除表單");
+    deleteDocument(id);
+    toast.success("已刪除");
   };
 
   const openCreate = () => {
@@ -100,7 +61,7 @@ export default function DiseaseFormsPage() {
     setDialogOpen(true);
   };
 
-  const openEdit = (form: DiseaseForm) => {
+  const openEdit = (form: { id: number; name: string; disease: string; fields: FormField[] }) => {
     setEditingId(form.id);
     setFormName(form.name);
     setFormDisease(form.disease);
@@ -144,26 +105,19 @@ export default function DiseaseFormsPage() {
     }
 
     if (editingId !== null) {
-      setForms((prev) =>
-        prev.map((f) =>
-          f.id === editingId
-            ? { ...f, name: formName.trim(), disease: formDisease, fields: formFields }
-            : f
-        )
-      );
+      updateDocument(editingId, {
+        name: formName.trim(),
+        disease: formDisease,
+        fields: formFields,
+      });
       toast.success("已更新表單");
     } else {
-      const newId = Math.max(0, ...forms.map((f) => f.id)) + 1;
-      setForms((prev) => [
-        ...prev,
-        {
-          id: newId,
-          name: formName.trim(),
-          disease: formDisease,
-          fields: formFields,
-          createdAt: new Date().toISOString().slice(0, 10),
-        },
-      ]);
+      addDocument({
+        name: formName.trim(),
+        disease: formDisease,
+        category: "表單",
+        fields: formFields,
+      });
       toast.success("已新增表單");
     }
     setDialogOpen(false);
@@ -208,28 +162,36 @@ export default function DiseaseFormsPage() {
             <TableRow>
               <TableHead className="text-sm text-muted-foreground font-medium">表單名稱</TableHead>
               <TableHead className="text-sm text-muted-foreground font-medium">關聯病症</TableHead>
-              <TableHead className="text-sm text-muted-foreground font-medium w-24 text-center">欄位數</TableHead>
+              <TableHead className="text-sm text-muted-foreground font-medium w-24 text-center">文件類別</TableHead>
               <TableHead className="text-sm text-muted-foreground font-medium w-28">建立日期</TableHead>
               <TableHead className="text-right text-sm text-muted-foreground font-medium">功能</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((form) => (
-              <TableRow key={form.id}>
-                <TableCell className="text-sm font-medium">{form.name}</TableCell>
-                <TableCell className="text-sm">{form.disease}</TableCell>
-                <TableCell className="text-sm text-center">{form.fields.length}</TableCell>
-                <TableCell className="text-sm">{form.createdAt}</TableCell>
+            {filtered.map((doc) => (
+              <TableRow key={doc.id}>
+                <TableCell className="text-sm font-medium">{doc.name}</TableCell>
+                <TableCell className="text-sm">{doc.disease}</TableCell>
+                <TableCell className="text-sm text-center">{doc.category}</TableCell>
+                <TableCell className="text-sm">{doc.createdAt}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <Button size="sm" className="text-[13px]" onClick={() => openEdit(form)}>
-                      <Pencil className="h-3.5 w-3.5 mr-1" />
-                      編輯
-                    </Button>
+                    {doc.category === "表單" && (
+                      <Button size="sm" className="text-[13px]" onClick={() => openEdit(doc)}>
+                        <Pencil className="h-3.5 w-3.5 mr-1" />
+                        編輯
+                      </Button>
+                    )}
+                    {doc.category === "同意書" && (
+                      <Button size="sm" className="text-[13px]" onClick={() => navigate(`/consent-forms/${doc.id}/edit`)}>
+                        <Pencil className="h-3.5 w-3.5 mr-1" />
+                        編輯
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => handleDelete(form.id)}
+                      onClick={() => handleDelete(doc.id)}
                       className="text-[13px]"
                     >
                       <X className="h-3.5 w-3.5 mr-1" />
@@ -256,7 +218,6 @@ export default function DiseaseFormsPage() {
             <DialogTitle>{editingId !== null ? "編輯表單" : "新增表單"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-5 pt-2">
-            {/* 表單基本資訊 */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-sm">
@@ -286,7 +247,6 @@ export default function DiseaseFormsPage() {
               </div>
             </div>
 
-            {/* 自訂欄位區 */}
             <div>
               <div className="flex items-center justify-between mb-3">
                 <Label className="text-sm font-medium">自訂欄位</Label>
