@@ -236,7 +236,7 @@ export default function ClinicEditPage() {
         )}
 
         {/* Right: Form */}
-        <div className="flex-1 bg-card rounded-lg shadow-sm p-6">
+        <div className={`bg-card rounded-lg shadow-sm p-6 ${isNew ? "flex-1" : "max-w-3xl mx-auto w-full"}`}>
           <h2 className="text-lg font-semibold mb-2">診所資訊</h2>
 
           <FieldRow label="診所名稱" required>
