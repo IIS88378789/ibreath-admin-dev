@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Search, RotateCcw, Plus, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,13 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
@@ -34,12 +28,10 @@ const initialClinics: Clinic[] = [
 ];
 
 export default function ClinicsPage() {
+  const navigate = useNavigate();
   const [clinics, setClinics] = useState<Clinic[]>(initialClinics);
   const [search, setSearch] = useState("");
   const [filtered, setFiltered] = useState<Clinic[]>(initialClinics);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingClinic, setEditingClinic] = useState<Clinic | null>(null);
-  const [formName, setFormName] = useState("");
 
   const handleSearch = () => {
     const result = clinics.filter((c) => c.name.includes(search));
@@ -52,15 +44,11 @@ export default function ClinicsPage() {
   };
 
   const handleAdd = () => {
-    setEditingClinic(null);
-    setFormName("");
-    setDialogOpen(true);
+    navigate("/clinics/new");
   };
 
   const handleEdit = (clinic: Clinic) => {
-    setEditingClinic(clinic);
-    setFormName(clinic.name);
-    setDialogOpen(true);
+    navigate(`/clinics/${clinic.id}/edit`);
   };
 
   const handleDelete = (id: number) => {
@@ -68,29 +56,6 @@ export default function ClinicsPage() {
     setClinics(updated);
     setFiltered(updated.filter((c) => c.name.includes(search)));
     toast.success("已刪除診所");
-  };
-
-  const handleSave = () => {
-    if (!formName.trim()) return;
-    if (editingClinic) {
-      const updated = clinics.map((c) =>
-        c.id === editingClinic.id ? { ...c, name: formName } : c
-      );
-      setClinics(updated);
-      setFiltered(updated.filter((c) => c.name.includes(search)));
-      toast.success("已更新診所");
-    } else {
-      const newClinic: Clinic = {
-        id: Date.now(),
-        name: formName,
-        patientCount: 0,
-      };
-      const updated = [...clinics, newClinic];
-      setClinics(updated);
-      setFiltered(updated.filter((c) => c.name.includes(search)));
-      toast.success("已新增診所");
-    }
-    setDialogOpen(false);
   };
 
   return (
@@ -170,29 +135,6 @@ export default function ClinicsPage() {
         </Table>
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {editingClinic ? "編輯診所" : "新增診所"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <Label className="mb-2 block">診所名稱</Label>
-            <Input
-              value={formName}
-              onChange={(e) => setFormName(e.target.value)}
-              placeholder="輸入診所名稱"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              取消
-            </Button>
-            <Button onClick={handleSave}>儲存</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
