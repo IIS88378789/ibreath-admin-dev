@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import step1Image from "@/assets/step1-create-channel.png";
+import stepFig1 from "@/assets/step-fig1.png";
+import stepFig2 from "@/assets/step-fig2.png";
+import stepFig3 from "@/assets/step-fig3.png";
+import stepFig4 from "@/assets/step-fig4.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -89,85 +93,102 @@ function FieldRow({ label, required, hint, children }: FieldRowProps) {
   );
 }
 
-function StepGuide() {
+function ImagePopup({ src, alt, open, onClose }: { src: string; alt: string; open: boolean; onClose: () => void }) {
+  if (!open) return null;
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-base font-bold text-primary mb-2">STEP 1</h3>
-        <div className="bg-muted/50 rounded-lg p-4 text-sm leading-relaxed">
-          <p>
-            請先至{" "}
-            <a
-              href="https://developers.line.biz/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary underline"
-            >
-              Line Developer
-            </a>{" "}
-            建立診所（Providers）的 LINE Login、Messaging API
-          </p>
-          <p className="text-destructive mt-1">注意：一定要發布上線（Publish this channel）</p>
-          <p className="text-muted-foreground mt-1">
-            Providers &gt; Create a new channel &gt; LINE Login、Messaging API
-          </p>
-          <img src={step1Image} alt="Create a new channel" className="mt-3 rounded border border-border w-full" />
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-base font-bold text-primary mb-2">STEP 2</h3>
-        <div className="bg-muted/50 rounded-lg p-4 text-sm leading-relaxed">
-          <p>填寫診所資訊，並且將剛剛已經建立好的 LINE Login、Messaging API 相關內容貼上</p>
-          <p className="mt-1">
-            <a href="#" className="text-primary underline">圖一</a>、
-            <a href="#" className="text-primary underline">圖二</a>、
-            <a href="#" className="text-primary underline">圖三</a>
-          </p>
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-base font-bold text-primary mb-2">STEP 3</h3>
-        <div className="bg-muted/50 rounded-lg p-4 text-sm leading-relaxed">
-          <p>
-            填寫完畢後按下{" "}
-            <span className="inline-block bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded">
-              新增
-            </span>
-          </p>
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-base font-bold text-primary mb-2">STEP 4</h3>
-        <div className="bg-muted/50 rounded-lg p-4 text-sm leading-relaxed">
-          <p>
-            請將畫面顯示的 Web Hook、Line Login Call Back 複製到{" "}
-            <a
-              href="https://developers.line.biz/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary underline"
-            >
-              Line Developer
-            </a>{" "}
-            中儲存
-          </p>
-          <p className="mt-1">
-            <a href="#" className="text-primary underline">圖二</a>、
-            <a href="#" className="text-primary underline">圖四</a>
-          </p>
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-base font-bold text-primary mb-2">STEP 5</h3>
-        <div className="bg-muted/50 rounded-lg p-4 text-sm leading-relaxed">
-          <p>完成新建診所</p>
-        </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
+      <div className="relative max-w-2xl max-h-[90vh] overflow-auto bg-card rounded-lg p-2" onClick={(e) => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-2 right-2 text-muted-foreground hover:text-foreground text-lg font-bold px-2">✕</button>
+        <img src={src} alt={alt} className="w-full rounded" />
       </div>
     </div>
+  );
+}
+
+function StepGuide() {
+  const [popupImg, setPopupImg] = useState<{ src: string; alt: string } | null>(null);
+
+  const figLink = (label: string, src: string) => (
+    <button
+      type="button"
+      onClick={() => setPopupImg({ src, alt: label })}
+      className="text-primary underline cursor-pointer bg-transparent border-none p-0 text-sm"
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <>
+      <ImagePopup
+        src={popupImg?.src || ""}
+        alt={popupImg?.alt || ""}
+        open={!!popupImg}
+        onClose={() => setPopupImg(null)}
+      />
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-base font-bold text-primary mb-2">STEP 1</h3>
+          <div className="bg-muted/50 rounded-lg p-4 text-sm leading-relaxed">
+            <p>
+              請先至{" "}
+              <a href="https://developers.line.biz/" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                Line Developer
+              </a>{" "}
+              建立診所（Providers）的 LINE Login、Messaging API
+            </p>
+            <p className="text-destructive mt-1">注意：一定要發布上線（Publish this channel）</p>
+            <p className="text-muted-foreground mt-1">
+              Providers &gt; Create a new channel &gt; LINE Login、Messaging API
+            </p>
+            <img src={step1Image} alt="Create a new channel" className="mt-3 rounded border border-border w-full" />
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-base font-bold text-primary mb-2">STEP 2</h3>
+          <div className="bg-muted/50 rounded-lg p-4 text-sm leading-relaxed">
+            <p>填寫診所資訊，並且將剛剛已經建立好的 LINE Login、Messaging API 相關內容貼上</p>
+            <p className="mt-1">
+              {figLink("圖一", stepFig1)}、{figLink("圖二", stepFig2)}、{figLink("圖三", stepFig3)}
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-base font-bold text-primary mb-2">STEP 3</h3>
+          <div className="bg-muted/50 rounded-lg p-4 text-sm leading-relaxed">
+            <p>
+              填寫完畢後按下{" "}
+              <span className="inline-block bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded">新增</span>
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-base font-bold text-primary mb-2">STEP 4</h3>
+          <div className="bg-muted/50 rounded-lg p-4 text-sm leading-relaxed">
+            <p>
+              請將畫面顯示的 Web Hook、Line Login Call Back 複製到{" "}
+              <a href="https://developers.line.biz/" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                Line Developer
+              </a>{" "}
+              中儲存
+            </p>
+            <p className="mt-1">
+              {figLink("圖二", stepFig2)}、{figLink("圖四", stepFig4)}
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-base font-bold text-primary mb-2">STEP 5</h3>
+          <div className="bg-muted/50 rounded-lg p-4 text-sm leading-relaxed">
+            <p>完成新建診所</p>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
