@@ -95,26 +95,26 @@ export default function ClinicsPage() {
 
   return (
     <div>
-      <div className="mb-1 text-xs text-muted-foreground">
-        診所管理 / 診所列表
+      <div className="mb-1 text-[13px] text-muted-foreground">
+        診所管理 &gt; 診所列表
       </div>
-      <h1 className="text-xl font-bold mb-6">診所列表</h1>
+      <h1 className="text-[22px] font-bold mb-5">診所列表</h1>
 
       <div className="bg-card rounded-lg p-5 mb-4 shadow-sm">
-        <Label className="text-sm font-medium mb-2 block">診所名稱</Label>
+        <Label className="text-[14px] font-medium mb-2 block">診所名稱</Label>
         <div className="flex items-center gap-3">
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="max-w-xs"
+            className="max-w-xs text-[14px]"
             placeholder="輸入診所名稱"
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           />
-          <Button onClick={handleSearch} size="sm">
+          <Button onClick={handleSearch} size="sm" className="text-[14px]">
             <Search className="h-4 w-4 mr-1" />
             搜尋
           </Button>
-          <Button onClick={handleReset} variant="outline" size="sm">
+          <Button onClick={handleReset} variant="outline" size="sm" className="text-[14px]">
             <RotateCcw className="h-4 w-4 mr-1" />
             重置
           </Button>
@@ -122,11 +122,11 @@ export default function ClinicsPage() {
       </div>
 
       <div className="flex items-center gap-3 mb-4">
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" className="text-[14px]">
           <Search className="h-4 w-4 mr-1" />
           搜尋功能
         </Button>
-        <Button variant="outline" size="sm" onClick={handleAdd}>
+        <Button variant="outline" size="sm" onClick={handleAdd} className="text-[14px]">
           <Plus className="h-4 w-4 mr-1" />
           新增診所
         </Button>
@@ -136,19 +136,19 @@ export default function ClinicsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[50%]">診所名稱</TableHead>
-              <TableHead>病患人數</TableHead>
-              <TableHead className="text-right">功能</TableHead>
+              <TableHead className="w-[50%] text-[13px] text-muted-foreground font-medium">診所名稱</TableHead>
+              <TableHead className="text-[13px] text-muted-foreground font-medium">病患人數</TableHead>
+              <TableHead className="text-right text-[13px] text-muted-foreground font-medium">功能</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.map((clinic) => (
               <TableRow key={clinic.id}>
-                <TableCell className="font-medium">{clinic.name}</TableCell>
-                <TableCell>{clinic.patientCount}</TableCell>
+                <TableCell className="font-medium text-[14px]">{clinic.name}</TableCell>
+                <TableCell className="text-[14px]">{clinic.patientCount}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <Button size="sm" onClick={() => handleEdit(clinic)}>
+                    <Button size="sm" onClick={() => handleEdit(clinic)} className="text-[13px]">
                       <Pencil className="h-3.5 w-3.5 mr-1" />
                       編輯
                     </Button>
@@ -156,6 +156,7 @@ export default function ClinicsPage() {
                       size="sm"
                       variant="destructive"
                       onClick={() => handleDelete(clinic.id)}
+                      className="text-[13px]"
                     >
                       <X className="h-3.5 w-3.5 mr-1" />
                       刪除
