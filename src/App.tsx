@@ -12,6 +12,7 @@ import InhalerEditPage from "./pages/InhalerEditPage";
 import ReferralsPage from "./pages/ReferralsPage";
 import DiseasesPage from "./pages/DiseasesPage";
 import DiseaseFormsPage from "./pages/DiseaseFormsPage";
+import ConsentFormEditPage from "./pages/ConsentFormEditPage";
 import ClinicEditPage from "./pages/ClinicEditPage";
 import NotFound from "./pages/NotFound";
 
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/referrals" element={<ReferralsPage />} />
             <Route path="/diseases" element={<DiseasesPage />} />
             <Route path="/disease-forms" element={<DiseaseFormsPage />} />
+            <Route path="/consent-forms/new" element={<ConsentFormEditPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

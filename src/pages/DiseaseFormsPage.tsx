@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Plus, Pencil, X, GripVertical } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Plus, Pencil, X, GripVertical, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -71,6 +72,7 @@ const initialForms: DiseaseForm[] = [
 ];
 
 export default function DiseaseFormsPage() {
+  const navigate = useNavigate();
   const [forms, setForms] = useState<DiseaseForm[]>(initialForms);
   const [diseaseFilter, setDiseaseFilter] = useState("all");
 
@@ -189,6 +191,10 @@ export default function DiseaseFormsPage() {
             </SelectContent>
           </Select>
           <div className="flex-1" />
+          <Button variant="outline" size="sm" className="text-[14px]" onClick={() => navigate("/consent-forms/new")}>
+            <FileText className="h-4 w-4 mr-1" />
+            新增同意書
+          </Button>
           <Button variant="outline" size="sm" className="text-[14px]" onClick={openCreate}>
             <Plus className="h-4 w-4 mr-1" />
             新增表單
