@@ -1,4 +1,5 @@
 import { Building2, Users, Wind, Share2, HeartPulse } from "lucide-react";
+import logoWhite from "@/assets/logo-white.png";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -24,7 +25,7 @@ export function AppSidebar() {
     <Sidebar className="w-44 border-none">
       <SidebarHeader className="px-4 py-5">
         <div className="flex items-center gap-2">
-          <Wind className="h-7 w-7 text-sidebar-foreground" />
+          <img src={logoWhite} alt="i-Breath" className="h-7 w-7" />
           <span className="text-[17px] font-bold text-sidebar-foreground tracking-wide">
             i-Breath
           </span>
