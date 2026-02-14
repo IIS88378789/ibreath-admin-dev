@@ -40,6 +40,7 @@ const App = () => (
             <Route path="/diseases" element={<DiseasesPage />} />
             <Route path="/disease-forms" element={<DiseaseFormsPage />} />
             <Route path="/consent-forms/new" element={<ConsentFormEditPage />} />
+            <Route path="/consent-forms/:id/edit" element={<ConsentFormEditPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

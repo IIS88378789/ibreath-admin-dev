@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,14 +26,46 @@ interface SignatureField {
 
 export default function ConsentFormEditPage() {
   const navigate = useNavigate();
-  const { addDocument } = useDiseaseDocumentStore();
+  const { id } = useParams();
+  const editingId = id ? Number(id) : null;
+  const isEditing = editingId !== null;
+
+  const { documents, addDocument, updateDocument } = useDiseaseDocumentStore();
   const { diseases } = useDiseaseStore();
   const diseaseNames = diseases.map((d) => d.name);
+
   const [title, setTitle] = useState("");
   const [disease, setDisease] = useState("");
   const [content, setContent] = useState("");
   const [fields, setFields] = useState<SignatureField[]>([]);
   const [nextFieldId, setNextFieldId] = useState(1);
+  const [initialized, setInitialized] = useState(false);
+
+  // Load existing document when editing
+  useEffect(() => {
+    if (isEditing && !initialized) {
+      const doc = documents.find((d) => d.id === editingId);
+      if (doc) {
+        setTitle(doc.name);
+        setDisease(doc.disease);
+        setContent(doc.content || "");
+        const mapped: SignatureField[] = doc.fields.map((f) => ({
+          id: f.id,
+          name: f.name,
+          type: f.type === "勾選框" ? "checkbox" as const : "input" as const,
+          description: f.description,
+        }));
+        setFields(mapped);
+        setNextFieldId(
+          doc.fields.length > 0 ? Math.max(...doc.fields.map((f) => f.id)) + 1 : 1
+        );
+        setInitialized(true);
+      } else {
+        toast.error("找不到該同意書");
+        navigate("/disease-forms");
+      }
+    }
+  }, [isEditing, editingId, documents, initialized, navigate]);
 
   const addField = () => {
     setFields((prev) => [
@@ -72,27 +104,38 @@ export default function ConsentFormEditPage() {
       return;
     }
 
-    addDocument({
-      name: title.trim(),
-      disease,
-      category: "同意書",
-      fields: fields.map((f) => ({
-        id: f.id,
-        name: f.name,
-        type: f.type === "checkbox" ? "勾選框" : "文字輸入",
-        description: f.description,
-      })),
-      content,
-    });
+    const mappedFields = fields.map((f) => ({
+      id: f.id,
+      name: f.name,
+      type: f.type === "checkbox" ? "勾選框" : "文字輸入",
+      description: f.description,
+    }));
 
-    toast.success("已儲存同意書");
+    if (isEditing) {
+      updateDocument(editingId!, {
+        name: title.trim(),
+        disease,
+        fields: mappedFields,
+        content,
+      });
+      toast.success("已更新同意書");
+    } else {
+      addDocument({
+        name: title.trim(),
+        disease,
+        category: "同意書",
+        fields: mappedFields,
+        content,
+      });
+      toast.success("已儲存同意書");
+    }
     navigate("/disease-forms");
   };
 
   return (
     <div>
       <div className="mb-1 text-sm text-muted-foreground">
-        疾病管理 &gt; 疾病相關表單 &gt; 新增同意書
+        疾病管理 &gt; 疾病相關表單 &gt; {isEditing ? "編輯同意書" : "新增同意書"}
       </div>
       <div className="flex items-center gap-3 mb-5">
         <Button
@@ -103,7 +146,7 @@ export default function ConsentFormEditPage() {
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-2xl font-semibold">新增同意書</h1>
+        <h1 className="text-2xl font-semibold">{isEditing ? "編輯同意書" : "新增同意書"}</h1>
       </div>
 
       <div className="max-w-3xl mx-auto space-y-6">
@@ -128,7 +171,7 @@ export default function ConsentFormEditPage() {
               </Label>
               <Select value={disease} onValueChange={setDisease}>
                 <SelectTrigger className="text-sm">
-                  <SelectValue />
+                  <SelectValue placeholder="選擇病症" />
                 </SelectTrigger>
                 <SelectContent>
                   {diseaseNames.map((d) => (
@@ -148,6 +191,7 @@ export default function ConsentFormEditPage() {
             同意書內容 <span className="text-destructive">*</span>
           </h2>
           <RichTextEditor
+            key={initialized ? "loaded" : "empty"}
             content={content}
             onChange={setContent}
             placeholder="請輸入同意書的詳細內容..."
