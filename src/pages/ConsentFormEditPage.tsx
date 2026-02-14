@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useDiseaseDocumentStore } from "@/stores/diseaseDocumentStore";
 
 const diseases = ["氣喘", "慢性阻塞性肺病", "過敏性氣喘", "肺氣腫", "慢性支氣管炎"];
 
@@ -26,6 +27,7 @@ interface SignatureField {
 
 export default function ConsentFormEditPage() {
   const navigate = useNavigate();
+  const { addDocument } = useDiseaseDocumentStore();
   const [title, setTitle] = useState("");
   const [disease, setDisease] = useState(diseases[0]);
   const [content, setContent] = useState("");
@@ -68,6 +70,20 @@ export default function ConsentFormEditPage() {
       toast.error("欄位名稱不可為空");
       return;
     }
+
+    addDocument({
+      name: title.trim(),
+      disease,
+      category: "同意書",
+      fields: fields.map((f) => ({
+        id: f.id,
+        name: f.name,
+        type: f.type === "checkbox" ? "勾選框" : "文字輸入",
+        description: f.description,
+      })),
+      content,
+    });
+
     toast.success("已儲存同意書");
     navigate("/disease-forms");
   };
