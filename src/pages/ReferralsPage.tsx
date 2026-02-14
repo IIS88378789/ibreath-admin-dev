@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Plus, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +11,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 interface Referral {
@@ -29,10 +34,14 @@ const initialReferrals: Referral[] = [
 ];
 
 export default function ReferralsPage() {
-  const navigate = useNavigate();
   const [referrals, setReferrals] = useState<Referral[]>(initialReferrals);
   const [search, setSearch] = useState("");
   const [filtered, setFiltered] = useState<Referral[]>(initialReferrals);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formName, setFormName] = useState("");
+  const [formOrder, setFormOrder] = useState("");
 
   const handleSearch = () => {
     const result = referrals.filter((r) => r.name.includes(search));
@@ -51,8 +60,42 @@ export default function ReferralsPage() {
     toast.success("已刪除轉介診所");
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") handleSearch();
+  const openCreate = () => {
+    setEditingId(null);
+    setFormName("");
+    setFormOrder(String((referrals.length > 0 ? Math.max(...referrals.map(r => r.order)) : 0) + 1));
+    setDialogOpen(true);
+  };
+
+  const openEdit = (referral: Referral) => {
+    setEditingId(referral.id);
+    setFormName(referral.name);
+    setFormOrder(String(referral.order));
+    setDialogOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!formName.trim() || !formOrder.trim()) {
+      toast.error("請填寫必填欄位");
+      return;
+    }
+
+    if (editingId !== null) {
+      const updated = referrals.map((r) =>
+        r.id === editingId ? { ...r, name: formName.trim(), order: Number(formOrder) } : r
+      );
+      setReferrals(updated);
+      setFiltered(updated.filter((r) => r.name.includes(search)));
+      toast.success("已更新轉介診所");
+    } else {
+      const newId = Math.max(0, ...referrals.map((r) => r.id)) + 1;
+      const newReferral: Referral = { id: newId, order: Number(formOrder), name: formName.trim() };
+      const updated = [...referrals, newReferral];
+      setReferrals(updated);
+      setFiltered(updated.filter((r) => r.name.includes(search)));
+      toast.success("已新增轉介診所");
+    }
+    setDialogOpen(false);
   };
 
   return (
@@ -73,10 +116,10 @@ export default function ReferralsPage() {
             }}
             className="max-w-xs text-[14px]"
             placeholder="輸入診所名稱"
-            onKeyDown={handleKeyDown}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           />
           <div className="flex-1" />
-          <Button variant="outline" size="sm" className="text-[14px]" onClick={() => navigate("/referrals/new")}>
+          <Button variant="outline" size="sm" className="text-[14px]" onClick={openCreate}>
             <Plus className="h-4 w-4 mr-1" />
             新增轉介診所
           </Button>
@@ -99,7 +142,7 @@ export default function ReferralsPage() {
                 <TableCell className="text-sm font-medium">{referral.name}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <Button size="sm" className="text-[13px]" onClick={() => navigate(`/referrals/${referral.id}/edit`)}>
+                    <Button size="sm" className="text-[13px]" onClick={() => openEdit(referral)}>
                       <Pencil className="h-3.5 w-3.5 mr-1" />
                       編輯
                     </Button>
@@ -126,6 +169,40 @@ export default function ReferralsPage() {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>轉介診所資訊</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center gap-4">
+              <Label className="w-28 shrink-0 text-sm">轉介診所名稱</Label>
+              <span className="text-destructive text-xs font-medium">必填*</span>
+              <Input
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                className="flex-1 text-sm"
+                placeholder="輸入診所名稱"
+              />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-28 shrink-0 text-sm">排序</Label>
+              <span className="text-destructive text-xs font-medium">必填*</span>
+              <Input
+                type="number"
+                value={formOrder}
+                onChange={(e) => setFormOrder(e.target.value)}
+                className="flex-1 text-sm"
+                placeholder="輸入排序"
+              />
+            </div>
+            <div className="flex justify-end pt-2">
+              <Button size="sm" onClick={handleSave}>儲存</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
