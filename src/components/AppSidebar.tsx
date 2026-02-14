@@ -37,7 +37,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild className="py-3 px-4">
+                  <SidebarMenuButton asChild className="py-3.5 px-4 my-0.5">
                     <NavLink
                       to={item.url}
                       end={false}
