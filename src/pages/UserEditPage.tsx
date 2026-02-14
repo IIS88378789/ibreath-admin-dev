@@ -80,7 +80,7 @@ export default function UserEditPage() {
       </div>
       <h1 className="text-2xl font-semibold mb-5">{isNew ? "新增使用者" : "編輯使用者"}</h1>
 
-      <div className="bg-card rounded-lg shadow-sm p-6 max-w-2xl">
+      <div className="bg-card rounded-lg shadow-sm p-6 max-w-2xl mx-auto">
         <h2 className="text-lg font-semibold mb-2">管理者使用者資訊</h2>
 
         {isNew ? (
