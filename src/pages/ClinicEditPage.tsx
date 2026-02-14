@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import step1Image from "@/assets/step1-create-channel.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -110,6 +111,7 @@ function StepGuide() {
           <p className="text-muted-foreground mt-1">
             Providers &gt; Create a new channel &gt; LINE Login、Messaging API
           </p>
+          <img src={step1Image} alt="Create a new channel" className="mt-3 rounded border border-border w-full" />
         </div>
       </div>
 
