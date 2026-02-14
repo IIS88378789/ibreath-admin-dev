@@ -28,19 +28,21 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useDiseaseDocumentStore, type FormField } from "@/stores/diseaseDocumentStore";
+import { useDiseaseStore } from "@/stores/diseaseStore";
 
 const fieldTypes = ["文字", "數字", "單選", "多選", "日期", "下拉選單", "文字區域"];
-const diseases = ["氣喘", "慢性阻塞性肺病", "過敏性氣喘", "肺氣腫", "慢性支氣管炎"];
 
 export default function DiseaseFormsPage() {
   const navigate = useNavigate();
   const { documents, addDocument, updateDocument, deleteDocument } = useDiseaseDocumentStore();
+  const { diseases } = useDiseaseStore();
+  const diseaseNames = diseases.map((d) => d.name);
   const [diseaseFilter, setDiseaseFilter] = useState("all");
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formName, setFormName] = useState("");
-  const [formDisease, setFormDisease] = useState(diseases[0]);
+  const [formDisease, setFormDisease] = useState("");
   const [formFields, setFormFields] = useState<FormField[]>([]);
   const [nextFieldId, setNextFieldId] = useState(1);
 
@@ -55,7 +57,7 @@ export default function DiseaseFormsPage() {
   const openCreate = () => {
     setEditingId(null);
     setFormName("");
-    setFormDisease(diseases[0]);
+    setFormDisease(diseaseNames[0] || "");
     setFormFields([]);
     setNextFieldId(1);
     setDialogOpen(true);
@@ -139,7 +141,7 @@ export default function DiseaseFormsPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all" className="text-[14px]">全部</SelectItem>
-              {diseases.map((d) => (
+              {diseaseNames.map((d) => (
                 <SelectItem key={d} value={d} className="text-[14px]">{d}</SelectItem>
               ))}
             </SelectContent>
@@ -239,7 +241,7 @@ export default function DiseaseFormsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {diseases.map((d) => (
+                    {diseaseNames.map((d) => (
                       <SelectItem key={d} value={d} className="text-sm">{d}</SelectItem>
                     ))}
                   </SelectContent>

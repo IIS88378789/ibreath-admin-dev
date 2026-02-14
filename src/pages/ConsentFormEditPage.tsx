@@ -15,8 +15,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useDiseaseDocumentStore } from "@/stores/diseaseDocumentStore";
-
-const diseases = ["氣喘", "慢性阻塞性肺病", "過敏性氣喘", "肺氣腫", "慢性支氣管炎"];
+import { useDiseaseStore } from "@/stores/diseaseStore";
 
 interface SignatureField {
   id: number;
@@ -28,8 +27,10 @@ interface SignatureField {
 export default function ConsentFormEditPage() {
   const navigate = useNavigate();
   const { addDocument } = useDiseaseDocumentStore();
+  const { diseases } = useDiseaseStore();
+  const diseaseNames = diseases.map((d) => d.name);
   const [title, setTitle] = useState("");
-  const [disease, setDisease] = useState(diseases[0]);
+  const [disease, setDisease] = useState("");
   const [content, setContent] = useState("");
   const [fields, setFields] = useState<SignatureField[]>([]);
   const [nextFieldId, setNextFieldId] = useState(1);
@@ -130,7 +131,7 @@ export default function ConsentFormEditPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {diseases.map((d) => (
+                  {diseaseNames.map((d) => (
                     <SelectItem key={d} value={d} className="text-sm">
                       {d}
                     </SelectItem>
