@@ -1,4 +1,4 @@
-import { Building2, Users, Wind, Share2 } from "lucide-react";
+import { Building2, Users, Wind, Share2, HeartPulse } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -16,6 +16,7 @@ const navItems = [
   { title: "使用者管理", url: "/users", icon: Users },
   { title: "吸入器管理", url: "/inhalers", icon: Wind },
   { title: "轉介診所管理", url: "/referrals", icon: Share2 },
+  { title: "疾病管理", url: "/diseases", icon: HeartPulse },
 ];
 
 export function AppSidebar() {
