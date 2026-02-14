@@ -156,7 +156,7 @@ export default function UsersPage() {
                   <Switch checked={user.enabled} onCheckedChange={() => toggleEnabled(user.id)} />
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button size="sm" className="text-[13px]">
+                  <Button size="sm" className="text-[13px]" onClick={() => navigate(`/users/${user.id}/edit`)}>
                     <Pencil className="h-3.5 w-3.5 mr-1" />
                     編輯
                   </Button>
