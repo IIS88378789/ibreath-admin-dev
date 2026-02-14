@@ -22,7 +22,7 @@ const navItems = [
 
 export function AppSidebar() {
   return (
-    <Sidebar className="w-44 border-none">
+    <Sidebar className="w-56 border-none">
       <SidebarHeader className="px-4 py-5">
         <div className="flex items-center gap-2">
           <img src={logoWhite} alt="i-Breath" className="h-7 w-7" />
