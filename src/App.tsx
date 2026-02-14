@@ -9,6 +9,7 @@ import UsersPage from "./pages/UsersPage";
 import InhalersPage from "./pages/InhalersPage";
 import ReferralsPage from "./pages/ReferralsPage";
 import DiseasesPage from "./pages/DiseasesPage";
+import ClinicEditPage from "./pages/ClinicEditPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,8 @@ const App = () => (
           <Route path="/" element={<Navigate to="/clinics" replace />} />
           <Route element={<AdminLayout />}>
             <Route path="/clinics" element={<ClinicsPage />} />
+            <Route path="/clinics/new" element={<ClinicEditPage />} />
+            <Route path="/clinics/:id/edit" element={<ClinicEditPage />} />
             <Route path="/users" element={<UsersPage />} />
             <Route path="/inhalers" element={<InhalersPage />} />
             <Route path="/referrals" element={<ReferralsPage />} />
