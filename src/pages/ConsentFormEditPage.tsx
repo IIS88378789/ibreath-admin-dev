@@ -4,8 +4,8 @@ import { ArrowLeft, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import RichTextEditor from "@/components/RichTextEditor";
 import {
   Select,
   SelectContent,
@@ -55,7 +55,8 @@ export default function ConsentFormEditPage() {
       toast.error("請填寫同意書名稱");
       return;
     }
-    if (!content.trim()) {
+    const plainText = content.replace(/<[^>]*>/g, "").trim();
+    if (!plainText) {
       toast.error("請填寫同意書內容");
       return;
     }
@@ -129,10 +130,9 @@ export default function ConsentFormEditPage() {
           <h2 className="text-base font-medium">
             同意書內容 <span className="text-destructive">*</span>
           </h2>
-          <Textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="text-sm min-h-[240px]"
+          <RichTextEditor
+            content={content}
+            onChange={setContent}
             placeholder="請輸入同意書的詳細內容..."
           />
         </div>
