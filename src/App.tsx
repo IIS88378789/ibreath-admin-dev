@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AdminLayout from "./components/AdminLayout";
 import ClinicsPage from "./pages/ClinicsPage";
 import UsersPage from "./pages/UsersPage";
+import UserEditPage from "./pages/UserEditPage";
 import InhalersPage from "./pages/InhalersPage";
 import ReferralsPage from "./pages/ReferralsPage";
 import DiseasesPage from "./pages/DiseasesPage";
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/clinics/new" element={<ClinicEditPage />} />
             <Route path="/clinics/:id/edit" element={<ClinicEditPage />} />
             <Route path="/users" element={<UsersPage />} />
+            <Route path="/users/new" element={<UserEditPage />} />
             <Route path="/inhalers" element={<InhalersPage />} />
             <Route path="/referrals" element={<ReferralsPage />} />
             <Route path="/diseases" element={<DiseasesPage />} />

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Search, RotateCcw, Plus, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,7 @@ const initialUsers: User[] = [
 ];
 
 export default function UsersPage() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [filtered, setFiltered] = useState<User[]>(initialUsers);
   const [searchName, setSearchName] = useState("");
@@ -122,7 +124,7 @@ export default function UsersPage() {
             重置
           </Button>
           <div className="flex-1" />
-          <Button variant="outline" size="sm" className="text-[14px]">
+          <Button variant="outline" size="sm" className="text-[14px]" onClick={() => navigate("/users/new")}>
             <Plus className="h-4 w-4 mr-1" />
             新增使用者
           </Button>
