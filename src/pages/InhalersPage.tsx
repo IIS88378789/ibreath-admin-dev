@@ -13,12 +13,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import inhalerPurple from "@/assets/inhaler-purple.png";
-import inhalerPink from "@/assets/inhaler-pink.png";
-import inhalerBlue from "@/assets/inhaler-blue.png";
-import inhalerRed from "@/assets/inhaler-red.png";
-import inhalerWhite from "@/assets/inhaler-white.png";
-import inhalerOrange from "@/assets/inhaler-orange.png";
 
 interface Inhaler {
   id: number;
@@ -28,12 +22,12 @@ interface Inhaler {
 }
 
 const initialInhalers: Inhaler[] = [
-  { id: 1, order: 1, image: inhalerPurple, name: "使肺泰 Seretide" },
-  { id: 2, order: 2, image: inhalerPink, name: "肺舒坦 Foster" },
-  { id: 3, order: 3, image: inhalerBlue, name: "潤娃易利達 Relvar" },
-  { id: 4, order: 5, image: inhalerRed, name: "吸必擴 Rapihaler" },
-  { id: 5, order: 6, image: inhalerWhite, name: "舒利迭 Symbicort" },
-  { id: 6, order: 7, image: inhalerOrange, name: "倍樂 Berodual" },
+  { id: 1, order: 1, image: "💜", name: "使肺泰 Seretide" },
+  { id: 2, order: 2, image: "💗", name: "肺舒坦 Foster" },
+  { id: 3, order: 3, image: "💚", name: "潤娃易利達 Relvar" },
+  { id: 4, order: 5, image: "🧡", name: "吸必擴 Rapihaler" },
+  { id: 5, order: 6, image: "💛", name: "舒利迭 Symbicort" },
+  { id: 6, order: 7, image: "💙", name: "倍樂 Berodual" },
 ];
 
 export default function InhalersPage() {
@@ -106,7 +100,7 @@ export default function InhalersPage() {
             {filtered.map((inhaler) => (
               <TableRow key={inhaler.id}>
                 <TableCell className="text-sm text-center">{inhaler.order}</TableCell>
-                <TableCell className="text-center"><img src={inhaler.image} alt={inhaler.name} className="h-12 w-12 object-contain inline-block" /></TableCell>
+                <TableCell className="text-2xl text-center">{inhaler.image}</TableCell>
                 <TableCell className="text-sm font-medium">{inhaler.name}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
