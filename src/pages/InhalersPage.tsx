@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Search, RotateCcw, Plus, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,7 @@ const initialInhalers: Inhaler[] = [
 ];
 
 export default function InhalersPage() {
+  const navigate = useNavigate();
   const [inhalers, setInhalers] = useState<Inhaler[]>(initialInhalers);
   const [search, setSearch] = useState("");
   const [filtered, setFiltered] = useState<Inhaler[]>(initialInhalers);
@@ -77,7 +79,7 @@ export default function InhalersPage() {
             重置
           </Button>
           <div className="flex-1" />
-          <Button variant="outline" size="sm" className="text-[14px]">
+          <Button variant="outline" size="sm" className="text-[14px]" onClick={() => navigate("/inhalers/new")}>
             <Plus className="h-4 w-4 mr-1" />
             新增吸入器
           </Button>
@@ -102,7 +104,7 @@ export default function InhalersPage() {
                 <TableCell className="text-sm font-medium">{inhaler.name}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <Button size="sm" className="text-[13px]">
+                    <Button size="sm" className="text-[13px]" onClick={() => navigate(`/inhalers/${inhaler.id}/edit`)}>
                       <Pencil className="h-3.5 w-3.5 mr-1" />
                       編輯
                     </Button>
