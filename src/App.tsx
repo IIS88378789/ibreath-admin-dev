@@ -8,6 +8,7 @@ import ClinicsPage from "./pages/ClinicsPage";
 import UsersPage from "./pages/UsersPage";
 import UserEditPage from "./pages/UserEditPage";
 import InhalersPage from "./pages/InhalersPage";
+import InhalerEditPage from "./pages/InhalerEditPage";
 import ReferralsPage from "./pages/ReferralsPage";
 import DiseasesPage from "./pages/DiseasesPage";
 import ClinicEditPage from "./pages/ClinicEditPage";
@@ -31,6 +32,8 @@ const App = () => (
             <Route path="/users/new" element={<UserEditPage />} />
             <Route path="/users/:id/edit" element={<UserEditPage />} />
             <Route path="/inhalers" element={<InhalersPage />} />
+            <Route path="/inhalers/new" element={<InhalerEditPage />} />
+            <Route path="/inhalers/:id/edit" element={<InhalerEditPage />} />
             <Route path="/referrals" element={<ReferralsPage />} />
             <Route path="/diseases" element={<DiseasesPage />} />
           </Route>
