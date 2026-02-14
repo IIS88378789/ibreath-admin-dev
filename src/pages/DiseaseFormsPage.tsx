@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Pencil, X, FileText } from "lucide-react";
+import { Plus, Pencil, X, FileText, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +29,8 @@ import {
 import { toast } from "sonner";
 import { useDiseaseDocumentStore, type FormField } from "@/stores/diseaseDocumentStore";
 import { useDiseaseStore } from "@/stores/diseaseStore";
+import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
+import type { DiseaseDocument } from "@/stores/diseaseDocumentStore";
 
 const fieldTypes = ["文字", "數字", "單選", "多選", "日期", "下拉選單", "文字區域"];
 
@@ -45,6 +47,7 @@ export default function DiseaseFormsPage() {
   const [formDisease, setFormDisease] = useState("");
   const [formFields, setFormFields] = useState<FormField[]>([]);
   const [nextFieldId, setNextFieldId] = useState(1);
+  const [previewDoc, setPreviewDoc] = useState<DiseaseDocument | null>(null);
 
   const filtered =
     diseaseFilter === "all" ? documents : documents.filter((f) => f.disease === diseaseFilter);
@@ -178,6 +181,10 @@ export default function DiseaseFormsPage() {
                 <TableCell className="text-sm">{doc.createdAt}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
+                    <Button size="sm" variant="outline" className="text-[13px]" onClick={() => setPreviewDoc(doc)}>
+                      <Eye className="h-3.5 w-3.5 mr-1" />
+                      預覽
+                    </Button>
                     {doc.category === "表單" && (
                       <Button size="sm" className="text-[13px]" onClick={() => openEdit(doc)}>
                         <Pencil className="h-3.5 w-3.5 mr-1" />
@@ -330,6 +337,12 @@ export default function DiseaseFormsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <DocumentPreviewDialog
+        open={previewDoc !== null}
+        onOpenChange={(open) => { if (!open) setPreviewDoc(null); }}
+        document={previewDoc}
+      />
     </div>
   );
 }
