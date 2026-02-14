@@ -25,26 +25,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-
-interface Disease {
-  id: number;
-  order: number;
-  name: string;
-  category: string;
-}
-
-const initialDiseases: Disease[] = [
-  { id: 1, order: 1, name: "氣喘", category: "氣喘" },
-  { id: 2, order: 2, name: "慢性阻塞性肺病", category: "肺阻塞" },
-  { id: 3, order: 3, name: "過敏性氣喘", category: "氣喘" },
-  { id: 4, order: 4, name: "肺氣腫", category: "肺阻塞" },
-  { id: 5, order: 5, name: "慢性支氣管炎", category: "肺阻塞" },
-];
+import { useDiseaseStore } from "@/stores/diseaseStore";
 
 const categories = ["all", "氣喘", "肺阻塞"];
 
 export default function DiseasesPage() {
-  const [diseases, setDiseases] = useState<Disease[]>(initialDiseases);
+  const { diseases, addDisease, updateDisease, deleteDisease } = useDiseaseStore();
   const [categoryFilter, setCategoryFilter] = useState("all");
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -58,7 +44,7 @@ export default function DiseasesPage() {
     : diseases.filter((d) => d.category === categoryFilter);
 
   const handleDelete = (id: number) => {
-    setDiseases((prev) => prev.filter((d) => d.id !== id));
+    deleteDisease(id);
     toast.success("已刪除疾病");
   };
 
@@ -70,7 +56,7 @@ export default function DiseasesPage() {
     setDialogOpen(true);
   };
 
-  const openEdit = (disease: Disease) => {
+  const openEdit = (disease: { id: number; name: string; order: number; category: string }) => {
     setEditingId(disease.id);
     setFormName(disease.name);
     setFormOrder(String(disease.order));
@@ -85,23 +71,18 @@ export default function DiseasesPage() {
     }
 
     if (editingId !== null) {
-      setDiseases((prev) =>
-        prev.map((d) =>
-          d.id === editingId
-            ? { ...d, name: formName.trim(), order: Number(formOrder), category: formCategory }
-            : d
-        )
-      );
+      updateDisease(editingId, {
+        name: formName.trim(),
+        order: Number(formOrder),
+        category: formCategory,
+      });
       toast.success("已更新疾病");
     } else {
-      const newId = Math.max(0, ...diseases.map((d) => d.id)) + 1;
-      const newDisease: Disease = {
-        id: newId,
+      addDisease({
         order: Number(formOrder),
         name: formName.trim(),
         category: formCategory,
-      };
-      setDiseases((prev) => [...prev, newDisease]);
+      });
       toast.success("已新增疾病");
     }
     setDialogOpen(false);
