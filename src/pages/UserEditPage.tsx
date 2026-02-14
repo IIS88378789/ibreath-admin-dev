@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,6 +10,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+
+const mockUsers: Record<string, { name: string; account: string; title: string; role: string; clinic: string }> = {
+  "1": { name: "CodingIT Admin", account: "service@codingit.tw", title: "Admin", role: "管理者", clinic: "" },
+  "2": { name: "Admin", account: "vivien5513745@gmail.com", title: "Admin", role: "管理者", clinic: "" },
+  "3": { name: "Admin", account: "shuo6878@gmail.com", title: "Admin", role: "管理者", clinic: "" },
+  "4": { name: "Admin", account: "ibreath1063@gmail.com", title: "Admin", role: "管理者", clinic: "" },
+  "5": { name: "愛而生", account: "service.ibreath@gmail.com", title: "測試", role: "診所", clinic: "健康呼吸" },
+  "6": { name: "測試", account: "ybeei740317@gmail.com", title: "醫師", role: "診所", clinic: "中崙國際診所" },
+};
 
 interface FieldRowProps {
   label: string;
@@ -34,13 +43,17 @@ function FieldRow({ label, required, children }: FieldRowProps) {
 }
 
 export default function UserEditPage() {
+  const { id } = useParams();
   const navigate = useNavigate();
+  const isNew = !id;
+  const existing = id && mockUsers[id] ? mockUsers[id] : null;
+
   const [form, setForm] = useState({
-    role: "",
-    clinic: "",
-    name: "",
-    account: "",
-    title: "",
+    role: existing?.role || "",
+    clinic: existing?.clinic || "",
+    name: existing?.name || "",
+    account: existing?.account || "",
+    title: existing?.title || "",
   });
 
   const update = (field: string, value: string) => {
@@ -48,78 +61,87 @@ export default function UserEditPage() {
   };
 
   const handleSave = () => {
-    if (!form.role || !form.name.trim() || !form.account.trim() || !form.title.trim()) {
+    if (!form.name.trim() || !form.title.trim()) {
       toast.error("請填寫所有必填欄位");
       return;
     }
-    toast.success("已新增使用者");
+    if (isNew && (!form.role || !form.account.trim())) {
+      toast.error("請填寫所有必填欄位");
+      return;
+    }
+    toast.success(isNew ? "已新增使用者" : "已儲存變更");
     navigate("/users");
   };
 
   return (
     <div>
       <div className="mb-1 text-sm text-muted-foreground">
-        使用者管理 &gt; 使用者列表 &gt; 新增使用者
+        使用者管理 &gt; 使用者列表 &gt; {isNew ? "新增使用者" : "編輯使用者"}
       </div>
-      <h1 className="text-2xl font-semibold mb-5">新增使用者</h1>
+      <h1 className="text-2xl font-semibold mb-5">{isNew ? "新增使用者" : "編輯使用者"}</h1>
 
       <div className="bg-card rounded-lg shadow-sm p-6 max-w-2xl">
         <h2 className="text-lg font-semibold mb-2">管理者使用者資訊</h2>
 
-        <FieldRow label="身份" required>
-          <Select value={form.role} onValueChange={(v) => update("role", v)}>
-            <SelectTrigger className="bg-muted/50 text-sm">
-              <SelectValue placeholder="---" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="管理者">管理者</SelectItem>
-              <SelectItem value="診所">診所</SelectItem>
-            </SelectContent>
-          </Select>
-        </FieldRow>
+        {isNew ? (
+          <>
+            <FieldRow label="身份" required>
+              <Select value={form.role} onValueChange={(v) => update("role", v)}>
+                <SelectTrigger className="bg-muted/50 text-sm">
+                  <SelectValue placeholder="---" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="管理者">管理者</SelectItem>
+                  <SelectItem value="診所">診所</SelectItem>
+                </SelectContent>
+              </Select>
+            </FieldRow>
 
-        <FieldRow label="診所別" required>
-          <Select value={form.clinic} onValueChange={(v) => update("clinic", v)}>
-            <SelectTrigger className="bg-muted/50 text-sm">
-              <SelectValue placeholder="---" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="健康呼吸">健康呼吸</SelectItem>
-              <SelectItem value="中崙國際診所">中崙國際診所</SelectItem>
-              <SelectItem value="關心診所">關心診所</SelectItem>
-              <SelectItem value="愷馨耳鼻喉科診所">愷馨耳鼻喉科診所</SelectItem>
-            </SelectContent>
-          </Select>
-        </FieldRow>
+            <FieldRow label="診所別" required>
+              <Select value={form.clinic} onValueChange={(v) => update("clinic", v)}>
+                <SelectTrigger className="bg-muted/50 text-sm">
+                  <SelectValue placeholder="---" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="健康呼吸">健康呼吸</SelectItem>
+                  <SelectItem value="中崙國際診所">中崙國際診所</SelectItem>
+                  <SelectItem value="關心診所">關心診所</SelectItem>
+                  <SelectItem value="愷馨耳鼻喉科診所">愷馨耳鼻喉科診所</SelectItem>
+                </SelectContent>
+              </Select>
+            </FieldRow>
 
-        <FieldRow label="名稱" required>
-          <Input
-            value={form.name}
-            onChange={(e) => update("name", e.target.value)}
-            className="bg-muted/50 text-sm"
-          />
-        </FieldRow>
+            <FieldRow label="名稱" required>
+              <Input value={form.name} onChange={(e) => update("name", e.target.value)} className="bg-muted/50 text-sm" />
+            </FieldRow>
 
-        <FieldRow label="使用者帳號" required>
-          <Input
-            value={form.account}
-            onChange={(e) => update("account", e.target.value)}
-            className="bg-muted/50 text-sm"
-            placeholder="name@demo.com"
-          />
-        </FieldRow>
+            <FieldRow label="使用者帳號" required>
+              <Input value={form.account} onChange={(e) => update("account", e.target.value)} className="bg-muted/50 text-sm" placeholder="name@demo.com" />
+            </FieldRow>
 
-        <FieldRow label="職稱" required>
-          <Input
-            value={form.title}
-            onChange={(e) => update("title", e.target.value)}
-            className="bg-muted/50 text-sm"
-          />
-        </FieldRow>
+            <FieldRow label="職稱" required>
+              <Input value={form.title} onChange={(e) => update("title", e.target.value)} className="bg-muted/50 text-sm" />
+            </FieldRow>
+          </>
+        ) : (
+          <>
+            <FieldRow label="名稱" required>
+              <Input value={form.name} onChange={(e) => update("name", e.target.value)} className="bg-muted/50 text-sm" />
+            </FieldRow>
+
+            <FieldRow label="使用者帳號">
+              <span className="text-sm">{form.account}</span>
+            </FieldRow>
+
+            <FieldRow label="職稱" required>
+              <Input value={form.title} onChange={(e) => update("title", e.target.value)} className="bg-muted/50 text-sm" />
+            </FieldRow>
+          </>
+        )}
 
         <div className="flex justify-end mt-6 pt-4 border-t border-border">
           <Button onClick={handleSave} className="px-8">
-            新增
+            {isNew ? "新增" : "儲存"}
           </Button>
         </div>
       </div>
