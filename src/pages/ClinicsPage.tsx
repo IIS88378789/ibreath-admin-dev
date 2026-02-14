@@ -118,18 +118,12 @@ export default function ClinicsPage() {
             <RotateCcw className="h-4 w-4 mr-1" />
             重置
           </Button>
+          <div className="flex-1" />
+          <Button variant="outline" size="sm" onClick={handleAdd} className="text-[14px]">
+            <Plus className="h-4 w-4 mr-1" />
+            新增診所
+          </Button>
         </div>
-      </div>
-
-      <div className="flex items-center gap-3 mb-4">
-        <Button variant="outline" size="sm" className="text-[14px]">
-          <Search className="h-4 w-4 mr-1" />
-          搜尋功能
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleAdd} className="text-[14px]">
-          <Plus className="h-4 w-4 mr-1" />
-          新增診所
-        </Button>
       </div>
 
       <div className="bg-card rounded-lg shadow-sm overflow-hidden">
