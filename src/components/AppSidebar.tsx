@@ -24,7 +24,7 @@ export function AppSidebar() {
       <SidebarHeader className="px-4 py-5">
         <div className="flex items-center gap-2">
           <Wind className="h-7 w-7 text-sidebar-foreground" />
-          <span className="text-lg font-bold text-sidebar-foreground tracking-wide">
+          <span className="text-[17px] font-bold text-sidebar-foreground tracking-wide">
             i-Breath
           </span>
         </div>
@@ -43,7 +43,7 @@ export function AppSidebar() {
                       activeClassName="bg-sidebar-accent text-sidebar-foreground font-semibold"
                     >
                       <item.icon className="h-5 w-5 shrink-0" />
-                      <span className="text-sm">{item.title}</span>
+                      <span className="text-[14px]">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
