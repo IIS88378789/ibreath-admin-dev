@@ -36,22 +36,6 @@ export default function DocumentPreviewDialog({
         </DialogHeader>
 
         <div className="space-y-6 pt-2">
-          {/* 基本資訊 */}
-          <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-muted-foreground">文件名稱：</span>
-                <span className="font-medium">{doc.name}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">關聯病症：</span>
-                <span className="font-medium">{doc.disease}</span>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
           {/* 同意書內容 */}
           {doc.category === "同意書" && doc.content && (
             <>
