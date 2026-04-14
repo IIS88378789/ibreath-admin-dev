@@ -31,7 +31,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers" ;
+
 
 const categories = ["all", "氣喘", "肺阻塞"];
 
