@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
+import { useDiseaseStore } from "@/stores/diseaseStore";
 
 const mockClinics: Record<string, {
   name: string;
@@ -25,6 +27,7 @@ const mockClinics: Record<string, {
   businessGroup: string;
   medicalCode: string;
   appointmentUrl: string;
+  diseases: string[];
   lineChannelId: string;
   lineChannelSecret: string;
   lineChannelToken: string;
@@ -40,6 +43,7 @@ const mockClinics: Record<string, {
     businessGroup: "taipei",
     medicalCode: "1101100011",
     appointmentUrl: "https://www.mmh.org.tw/register_divide.php?depid=3",
+    diseases: ["氣喘", "肺阻塞"],
     lineChannelId: "2003809033",
     lineChannelSecret: "05cabeb5741e2c1f6e84f9893b59935f",
     lineChannelToken: "gtCli+Shf6PBg3MMZeEh7b+OKYJwldBVbg8EjMH1wSgccH",
@@ -57,6 +61,7 @@ const defaultForm = {
   businessGroup: "",
   medicalCode: "",
   appointmentUrl: "",
+  diseases: [] as string[],
   lineChannelId: "",
   lineChannelSecret: "",
   lineChannelToken: "",
@@ -196,12 +201,26 @@ export default function ClinicEditPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isNew = !id;
+  const { diseases } = useDiseaseStore();
+
+  // Get unique categories from disease store
+  const diseaseCategories = [...new Set(diseases.map((d) => d.category))];
 
   const initial = id && mockClinics[id] ? mockClinics[id] : defaultForm;
   const [form, setForm] = useState(initial);
 
   const update = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const toggleDisease = (category: string) => {
+    setForm((prev) => {
+      const current = prev.diseases || [];
+      const next = current.includes(category)
+        ? current.filter((c) => c !== category)
+        : [...current, category];
+      return { ...prev, diseases: next };
+    });
   };
 
   const copyToClipboard = (text: string) => {
@@ -285,6 +304,21 @@ export default function ClinicEditPage() {
               onChange={(e) => update("medicalCode", e.target.value)}
               className="bg-muted/50 text-sm"
             />
+          </FieldRow>
+
+          <FieldRow label="疾病別" required>
+            <div className="flex flex-wrap gap-4">
+              {diseaseCategories.map((cat) => (
+                <div key={cat} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`disease-${cat}`}
+                    checked={(form.diseases || []).includes(cat)}
+                    onCheckedChange={() => toggleDisease(cat)}
+                  />
+                  <Label htmlFor={`disease-${cat}`} className="text-sm cursor-pointer">{cat}</Label>
+                </div>
+              ))}
+            </div>
           </FieldRow>
 
           <FieldRow label="網路預約網址" required>
