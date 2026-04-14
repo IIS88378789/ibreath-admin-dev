@@ -32,7 +32,9 @@ const diseaseSubItems = [
 
 export function AppSidebar() {
   const location = useLocation();
+  const isInhalerActive = location.pathname.startsWith("/inhalers") || location.pathname.startsWith("/inhaler-categories");
   const isDiseaseActive = location.pathname.startsWith("/diseases") || location.pathname.startsWith("/disease-forms");
+  const [inhalerOpen, setInhalerOpen] = useState(isInhalerActive);
   const [diseaseOpen, setDiseaseOpen] = useState(isDiseaseActive);
 
   return (
@@ -60,6 +62,35 @@ export function AppSidebar() {
                     >
                       <item.icon className="h-5 w-5 shrink-0" />
                       <span className="text-base">{item.title}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+
+              {/* 吸入器管理 with sub-menu */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  className="py-3.5 px-4 my-0.5 cursor-pointer"
+                  onClick={() => setInhalerOpen((prev) => !prev)}
+                >
+                  <div className={`flex items-center gap-3 w-full ${isInhalerActive ? "text-sidebar-foreground font-semibold" : "text-sidebar-foreground/80"}`}>
+                    <Wind className="h-5 w-5 shrink-0" />
+                    <span className="text-base flex-1">吸入器管理</span>
+                    <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${inhalerOpen ? "rotate-180" : ""}`} />
+                  </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              {inhalerOpen && inhalerSubItems.map((sub) => (
+                <SidebarMenuItem key={sub.title}>
+                  <SidebarMenuButton asChild className="py-2.5 pl-12 pr-4 my-0">
+                    <NavLink
+                      to={sub.url}
+                      end
+                      className="flex items-center gap-2 text-sidebar-foreground/70 hover:bg-sidebar-accent rounded-md transition-colors text-[14px]"
+                      activeClassName="bg-sidebar-accent text-sidebar-foreground font-semibold"
+                    >
+                      <FileText className="h-4 w-4 shrink-0" />
+                      <span>{sub.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
