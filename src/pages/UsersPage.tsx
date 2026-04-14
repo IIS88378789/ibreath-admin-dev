@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, RotateCcw, Plus, Pencil } from "lucide-react";
+import { Search, RotateCcw, Plus, Pencil, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,6 +40,18 @@ const initialUsers: User[] = [
   { id: 6, name: "測試", clinicName: "中崙國際診所", title: "醫師", role: "診所", account: "ybeei740317@gmail.com", enabled: true },
 ];
 
+type SortKey = "name" | "clinicName" | "title" | "role" | "account" | "enabled";
+type SortDir = "asc" | "desc" | null;
+
+const sortableColumns: { key: SortKey; label: string }[] = [
+  { key: "name", label: "使用者名稱" },
+  { key: "clinicName", label: "診所名稱" },
+  { key: "title", label: "使用者職稱" },
+  { key: "role", label: "使用者身份" },
+  { key: "account", label: "使用者帳號" },
+  { key: "enabled", label: "啟用狀態" },
+];
+
 export default function UsersPage() {
   const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>(initialUsers);
@@ -47,6 +59,8 @@ export default function UsersPage() {
   const [searchName, setSearchName] = useState("");
   const [searchRole, setSearchRole] = useState("all");
   const [searchClinic, setSearchClinic] = useState("all");
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>(null);
 
   const handleSearch = () => {
     let result = users;
@@ -61,6 +75,8 @@ export default function UsersPage() {
     setSearchRole("all");
     setSearchClinic("all");
     setFiltered(users);
+    setSortKey(null);
+    setSortDir(null);
   };
 
   const toggleEnabled = (id: number) => {
@@ -69,7 +85,38 @@ export default function UsersPage() {
     setFiltered((prev) => prev.map((u) => (u.id === id ? { ...u, enabled: !u.enabled } : u)));
   };
 
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      if (sortDir === "asc") setSortDir("desc");
+      else if (sortDir === "desc") { setSortKey(null); setSortDir(null); }
+      else setSortDir("asc");
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
+
+  const sorted = useMemo(() => {
+    if (!sortKey || !sortDir) return filtered;
+    return [...filtered].sort((a, b) => {
+      const aVal = a[sortKey];
+      const bVal = b[sortKey];
+      if (typeof aVal === "boolean" && typeof bVal === "boolean") {
+        return sortDir === "asc" ? (aVal === bVal ? 0 : aVal ? -1 : 1) : (aVal === bVal ? 0 : aVal ? 1 : -1);
+      }
+      const aStr = String(aVal).toLowerCase();
+      const bStr = String(bVal).toLowerCase();
+      const cmp = aStr.localeCompare(bStr, "zh-Hant");
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [filtered, sortKey, sortDir]);
+
   const clinicNames = [...new Set(users.map((u) => u.clinicName).filter(Boolean))];
+
+  const SortIcon = ({ column }: { column: SortKey }) => {
+    if (sortKey !== column || !sortDir) return <ArrowUpDown className="h-3.5 w-3.5 ml-1 opacity-40" />;
+    return sortDir === "asc" ? <ArrowUp className="h-3.5 w-3.5 ml-1" /> : <ArrowDown className="h-3.5 w-3.5 ml-1" />;
+  };
 
   return (
     <div>
@@ -135,17 +182,23 @@ export default function UsersPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-sm text-muted-foreground font-medium">使用者名稱</TableHead>
-              <TableHead className="text-sm text-muted-foreground font-medium">診所名稱</TableHead>
-              <TableHead className="text-sm text-muted-foreground font-medium">使用者職稱</TableHead>
-              <TableHead className="text-sm text-muted-foreground font-medium">使用者身份</TableHead>
-              <TableHead className="text-sm text-muted-foreground font-medium">使用者帳號</TableHead>
-              <TableHead className="text-sm text-muted-foreground font-medium">啟用狀態</TableHead>
+              {sortableColumns.map((col) => (
+                <TableHead
+                  key={col.key}
+                  className="text-sm text-muted-foreground font-medium cursor-pointer select-none hover:text-foreground transition-colors"
+                  onClick={() => handleSort(col.key)}
+                >
+                  <div className="flex items-center">
+                    {col.label}
+                    <SortIcon column={col.key} />
+                  </div>
+                </TableHead>
+              ))}
               <TableHead className="text-right text-sm text-muted-foreground font-medium">功能</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((user) => (
+            {sorted.map((user) => (
               <TableRow key={user.id}>
                 <TableCell className="text-sm font-medium">{user.name}</TableCell>
                 <TableCell className="text-sm">{user.clinicName}</TableCell>
@@ -163,7 +216,7 @@ export default function UsersPage() {
                 </TableCell>
               </TableRow>
             ))}
-            {filtered.length === 0 && (
+            {sorted.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   沒有找到使用者
