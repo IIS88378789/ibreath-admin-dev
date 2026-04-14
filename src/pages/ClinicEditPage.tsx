@@ -201,12 +201,26 @@ export default function ClinicEditPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isNew = !id;
+  const { diseases } = useDiseaseStore();
+
+  // Get unique categories from disease store
+  const diseaseCategories = [...new Set(diseases.map((d) => d.category))];
 
   const initial = id && mockClinics[id] ? mockClinics[id] : defaultForm;
   const [form, setForm] = useState(initial);
 
   const update = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const toggleDisease = (category: string) => {
+    setForm((prev) => {
+      const current = prev.diseases || [];
+      const next = current.includes(category)
+        ? current.filter((c) => c !== category)
+        : [...current, category];
+      return { ...prev, diseases: next };
+    });
   };
 
   const copyToClipboard = (text: string) => {
@@ -290,6 +304,21 @@ export default function ClinicEditPage() {
               onChange={(e) => update("medicalCode", e.target.value)}
               className="bg-muted/50 text-sm"
             />
+          </FieldRow>
+
+          <FieldRow label="疾病別" required>
+            <div className="flex flex-wrap gap-4">
+              {diseaseCategories.map((cat) => (
+                <div key={cat} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`disease-${cat}`}
+                    checked={(form.diseases || []).includes(cat)}
+                    onCheckedChange={() => toggleDisease(cat)}
+                  />
+                  <Label htmlFor={`disease-${cat}`} className="text-sm cursor-pointer">{cat}</Label>
+                </div>
+              ))}
+            </div>
           </FieldRow>
 
           <FieldRow label="網路預約網址" required>
