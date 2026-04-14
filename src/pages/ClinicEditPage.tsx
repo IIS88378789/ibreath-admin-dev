@@ -321,13 +321,6 @@ export default function ClinicEditPage() {
             </div>
           </FieldRow>
 
-          <FieldRow label="網路預約網址" required>
-            <Input
-              value={form.appointmentUrl}
-              onChange={(e) => update("appointmentUrl", e.target.value)}
-              className="bg-muted/50 text-sm"
-            />
-          </FieldRow>
 
           <FieldRow
             label="Line Channel ID"
