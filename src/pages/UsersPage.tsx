@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, RotateCcw, Plus, Pencil, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Search, RotateCcw, Plus, Pencil, X, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { toast } from "sonner";
 
 interface User {
   id: number;
@@ -61,6 +62,8 @@ export default function UsersPage() {
   const [searchClinic, setSearchClinic] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
+  const [pageSize, setPageSize] = useState(20);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const handleSearch = () => {
     let result = users;
@@ -68,6 +71,7 @@ export default function UsersPage() {
     if (searchRole !== "all") result = result.filter((u) => u.role === searchRole);
     if (searchClinic !== "all") result = result.filter((u) => u.clinicName === searchClinic);
     setFiltered(result);
+    setCurrentPage(1);
   };
 
   const handleReset = () => {
@@ -77,12 +81,20 @@ export default function UsersPage() {
     setFiltered(users);
     setSortKey(null);
     setSortDir(null);
+    setCurrentPage(1);
   };
 
   const toggleEnabled = (id: number) => {
     const updated = users.map((u) => (u.id === id ? { ...u, enabled: !u.enabled } : u));
     setUsers(updated);
     setFiltered((prev) => prev.map((u) => (u.id === id ? { ...u, enabled: !u.enabled } : u)));
+  };
+
+  const handleDelete = (id: number) => {
+    const updated = users.filter((u) => u.id !== id);
+    setUsers(updated);
+    setFiltered((prev) => prev.filter((u) => u.id !== id));
+    toast.success("已刪除使用者");
   };
 
   const handleSort = (key: SortKey) => {
@@ -110,6 +122,9 @@ export default function UsersPage() {
       return sortDir === "asc" ? cmp : -cmp;
     });
   }, [filtered, sortKey, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const paged = sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const clinicNames = [...new Set(users.map((u) => u.clinicName).filter(Boolean))];
 
@@ -198,7 +213,7 @@ export default function UsersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sorted.map((user) => (
+            {paged.map((user) => (
               <TableRow key={user.id}>
                 <TableCell className="text-sm font-medium">{user.name}</TableCell>
                 <TableCell className="text-sm">{user.clinicName}</TableCell>
@@ -209,14 +224,20 @@ export default function UsersPage() {
                   <Switch checked={user.enabled} onCheckedChange={() => toggleEnabled(user.id)} />
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button size="sm" className="text-[13px]" onClick={() => navigate(`/users/${user.id}/edit`)}>
-                    <Pencil className="h-3.5 w-3.5 mr-1" />
-                    編輯
-                  </Button>
+                  <div className="flex items-center justify-end gap-2">
+                    <Button size="sm" className="text-[13px]" onClick={() => navigate(`/users/${user.id}/edit`)}>
+                      <Pencil className="h-3.5 w-3.5 mr-1" />
+                      編輯
+                    </Button>
+                    <Button size="sm" variant="destructive" className="text-[13px]" onClick={() => handleDelete(user.id)}>
+                      <X className="h-3.5 w-3.5 mr-1" />
+                      刪除
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
-            {sorted.length === 0 && (
+            {paged.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   沒有找到使用者
@@ -225,6 +246,41 @@ export default function UsersPage() {
             )}
           </TableBody>
         </Table>
+
+        <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>每頁顯示</span>
+            <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setCurrentPage(1); }}>
+              <SelectTrigger className="w-20 h-8 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+            <span>筆，共 {sorted.length} 筆</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage <= 1} onClick={() => setCurrentPage((p) => p - 1)}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={page === currentPage ? "default" : "outline"}
+                size="icon"
+                className="h-8 w-8 text-sm"
+                onClick={() => setCurrentPage(page)}
+              >
+                {page}
+              </Button>
+            ))}
+            <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage >= totalPages} onClick={() => setCurrentPage((p) => p + 1)}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
