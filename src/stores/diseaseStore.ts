@@ -12,6 +12,7 @@ interface DiseaseStore {
   addDisease: (disease: Omit<Disease, "id">) => void;
   updateDisease: (id: number, updates: Partial<Disease>) => void;
   deleteDisease: (id: number) => void;
+  reorderDiseases: (orderedIds: number[]) => void;
 }
 
 const initialDiseases: Disease[] = [
@@ -34,5 +35,13 @@ export const useDiseaseStore = create<DiseaseStore>((set, get) => ({
   },
   deleteDisease: (id) => {
     set({ diseases: get().diseases.filter((d) => d.id !== id) });
+  },
+  reorderDiseases: (orderedIds) => {
+    const { diseases } = get();
+    const reordered = orderedIds.map((id, index) => {
+      const d = diseases.find((dis) => dis.id === id)!;
+      return { ...d, order: index + 1 };
+    });
+    set({ diseases: reordered });
   },
 }));
