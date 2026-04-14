@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
+import { useDiseaseStore } from "@/stores/diseaseStore";
 
 const mockClinics: Record<string, {
   name: string;
@@ -25,6 +27,7 @@ const mockClinics: Record<string, {
   businessGroup: string;
   medicalCode: string;
   appointmentUrl: string;
+  diseases: string[];
   lineChannelId: string;
   lineChannelSecret: string;
   lineChannelToken: string;
@@ -40,6 +43,7 @@ const mockClinics: Record<string, {
     businessGroup: "taipei",
     medicalCode: "1101100011",
     appointmentUrl: "https://www.mmh.org.tw/register_divide.php?depid=3",
+    diseases: ["氣喘", "肺阻塞"],
     lineChannelId: "2003809033",
     lineChannelSecret: "05cabeb5741e2c1f6e84f9893b59935f",
     lineChannelToken: "gtCli+Shf6PBg3MMZeEh7b+OKYJwldBVbg8EjMH1wSgccH",
@@ -57,6 +61,7 @@ const defaultForm = {
   businessGroup: "",
   medicalCode: "",
   appointmentUrl: "",
+  diseases: [] as string[],
   lineChannelId: "",
   lineChannelSecret: "",
   lineChannelToken: "",
