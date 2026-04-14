@@ -17,8 +17,12 @@ import {
 const navItems = [
   { title: "診所管理", url: "/clinics", icon: Building2 },
   { title: "使用者管理", url: "/users", icon: Users },
-  { title: "吸入器管理", url: "/inhalers", icon: Wind },
   { title: "轉介診所管理", url: "/referrals", icon: Share2 },
+];
+
+const inhalerSubItems = [
+  { title: "吸入器列表", url: "/inhalers" },
+  { title: "吸入器分類", url: "/inhaler-categories" },
 ];
 
 const diseaseSubItems = [
