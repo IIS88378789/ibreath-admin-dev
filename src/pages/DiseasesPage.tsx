@@ -84,7 +84,7 @@ export default function DiseasesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formName, setFormName] = useState("");
-  const [formOrder, setFormOrder] = useState("");
+  
   const [formCategory, setFormCategory] = useState("氣喘");
 
   const sorted = [...diseases].sort((a, b) => a.order - b.order);
@@ -115,28 +115,29 @@ export default function DiseasesPage() {
     setEditingId(null);
     setFormName("");
     setFormCategory("氣喘");
-    setFormOrder(String((diseases.length > 0 ? Math.max(...diseases.map((d) => d.order)) : 0) + 1));
+    
     setDialogOpen(true);
   };
 
   const openEdit = (disease: { id: number; name: string; order: number; category: string }) => {
     setEditingId(disease.id);
     setFormName(disease.name);
-    setFormOrder(String(disease.order));
+    
     setFormCategory(disease.category);
     setDialogOpen(true);
   };
 
   const handleSave = () => {
-    if (!formName.trim() || !formOrder.trim()) {
+    if (!formName.trim()) {
       toast.error("請填寫必填欄位");
       return;
     }
     if (editingId !== null) {
-      updateDisease(editingId, { name: formName.trim(), order: Number(formOrder), category: formCategory });
+      updateDisease(editingId, { name: formName.trim(), category: formCategory });
       toast.success("已更新疾病");
     } else {
-      addDisease({ order: Number(formOrder), name: formName.trim(), category: formCategory });
+      const nextOrder = (diseases.length > 0 ? Math.max(...diseases.map((d) => d.order)) : 0) + 1;
+      addDisease({ order: nextOrder, name: formName.trim(), category: formCategory });
       toast.success("已新增疾病");
     }
     setDialogOpen(false);
@@ -218,11 +219,6 @@ export default function DiseasesPage() {
                   <SelectItem value="肺阻塞">肺阻塞</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="flex items-center gap-4">
-              <Label className="w-20 shrink-0 text-sm">排序</Label>
-              <span className="text-destructive text-xs font-medium">必填*</span>
-              <Input type="number" value={formOrder} onChange={(e) => setFormOrder(e.target.value)} className="flex-1 text-sm" placeholder="輸入排序" />
             </div>
             <div className="flex justify-end pt-2">
               <Button size="sm" onClick={handleSave}>儲存</Button>
