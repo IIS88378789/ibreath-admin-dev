@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, RotateCcw, Plus, Pencil, X } from "lucide-react";
+import { Search, RotateCcw, Plus, Pencil, X, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,17 +11,94 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { useInhalerStore } from "@/stores/inhalerStore";
+import { useInhalerStore, type Inhaler } from "@/stores/inhalerStore";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+interface SortableRowProps {
+  inhaler: Inhaler;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+function SortableRow({ inhaler, onEdit, onDelete }: SortableRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: inhaler.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <TableRow ref={setNodeRef} style={style}>
+      <TableCell className="text-sm text-center w-24">
+        <div className="flex items-center justify-center gap-1">
+          <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground">
+            <GripVertical className="h-4 w-4" />
+          </button>
+          {inhaler.order}
+        </div>
+      </TableCell>
+      <TableCell className="text-sm font-medium">{inhaler.name}</TableCell>
+      <TableCell className="text-sm">{inhaler.category}</TableCell>
+      <TableCell className="text-right">
+        <div className="flex items-center justify-end gap-2">
+          <Button size="sm" className="text-[13px]" onClick={onEdit}>
+            <Pencil className="h-3.5 w-3.5 mr-1" />編輯
+          </Button>
+          <Button size="sm" variant="destructive" onClick={onDelete} className="text-[13px]">
+            <X className="h-3.5 w-3.5 mr-1" />刪除
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
 
 export default function InhalersPage() {
   const navigate = useNavigate();
-  const { inhalers, categories, deleteInhaler } = useInhalerStore();
+  const { inhalers, categories, deleteInhaler, reorderInhalers } = useInhalerStore();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
-  const filtered = inhalers
+  const sorted = [...inhalers].sort((a, b) => a.order - b.order);
+  const filtered = sorted
     .filter((i) => (categoryFilter === "all" || i.category === categoryFilter))
     .filter((i) => i.name.includes(search));
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = sorted.findIndex((i) => i.id === active.id);
+    const newIndex = sorted.findIndex((i) => i.id === over.id);
+    const reordered = arrayMove(sorted, oldIndex, newIndex);
+    reorderInhalers(reordered.map((i) => i.id));
+    toast.success("已更新排序");
+  };
 
   const handleSearch = () => {};
   const handleReset = () => {
@@ -92,30 +169,25 @@ export default function InhalersPage() {
               <TableHead className="text-right text-sm text-muted-foreground font-medium">功能</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
-            {filtered.map((inhaler) => (
-              <TableRow key={inhaler.id}>
-                <TableCell className="text-sm text-center">{inhaler.order}</TableCell>
-                <TableCell className="text-sm font-medium">{inhaler.name}</TableCell>
-                <TableCell className="text-sm">{inhaler.category}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <Button size="sm" className="text-[13px]" onClick={() => navigate(`/inhalers/${inhaler.id}/edit`)}>
-                      <Pencil className="h-3.5 w-3.5 mr-1" />編輯
-                    </Button>
-                    <Button size="sm" variant="destructive" onClick={() => handleDelete(inhaler.id)} className="text-[13px]">
-                      <X className="h-3.5 w-3.5 mr-1" />刪除
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {filtered.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">沒有找到吸入器</TableCell>
-              </TableRow>
-            )}
-          </TableBody>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={filtered.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+              <TableBody>
+                {filtered.map((inhaler) => (
+                  <SortableRow
+                    key={inhaler.id}
+                    inhaler={inhaler}
+                    onEdit={() => navigate(`/inhalers/${inhaler.id}/edit`)}
+                    onDelete={() => handleDelete(inhaler.id)}
+                  />
+                ))}
+                {filtered.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">沒有找到吸入器</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </SortableContext>
+          </DndContext>
         </Table>
       </div>
     </div>

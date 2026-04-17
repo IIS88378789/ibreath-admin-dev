@@ -22,6 +22,7 @@ interface InhalerStore {
   addInhaler: (inhaler: Omit<Inhaler, "id">) => void;
   updateInhaler: (id: number, updates: Partial<Inhaler>) => void;
   deleteInhaler: (id: number) => void;
+  reorderInhalers: (orderedIds: number[]) => void;
 }
 
 const initialCategories: InhalerCategory[] = [
@@ -63,5 +64,15 @@ export const useInhalerStore = create<InhalerStore>((set, get) => ({
   },
   deleteInhaler: (id) => {
     set({ inhalers: get().inhalers.filter((i) => i.id !== id) });
+  },
+  reorderInhalers: (orderedIds) => {
+    const { inhalers } = get();
+    const reordered = orderedIds.map((id, index) => {
+      const i = inhalers.find((inh) => inh.id === id)!;
+      return { ...i, order: index + 1 };
+    });
+    // keep any inhalers not in orderedIds (e.g., filtered out) untouched
+    const remaining = inhalers.filter((i) => !orderedIds.includes(i.id));
+    set({ inhalers: [...reordered, ...remaining] });
   },
 }));

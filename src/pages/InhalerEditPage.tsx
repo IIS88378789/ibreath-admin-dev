@@ -37,7 +37,6 @@ export default function InhalerEditPage() {
 
   const [form, setForm] = useState({
     name: existing?.name || "",
-    order: existing?.order?.toString() || "",
     category: existing?.category || (categories[0]?.name || ""),
   });
 
@@ -46,15 +45,16 @@ export default function InhalerEditPage() {
   };
 
   const handleSave = () => {
-    if (!form.name.trim() || !form.order.trim() || !form.category) {
+    if (!form.name.trim() || !form.category) {
       toast.error("請填寫所有必填欄位");
       return;
     }
     if (isNew) {
-      addInhaler({ name: form.name.trim(), order: Number(form.order), category: form.category });
+      const nextOrder = (inhalers.length > 0 ? Math.max(...inhalers.map((i) => i.order)) : 0) + 1;
+      addInhaler({ name: form.name.trim(), order: nextOrder, category: form.category });
       toast.success("已新增吸入器");
     } else {
-      updateInhaler(Number(id), { name: form.name.trim(), order: Number(form.order), category: form.category });
+      updateInhaler(Number(id), { name: form.name.trim(), category: form.category });
       toast.success("已儲存變更");
     }
     navigate("/inhalers");
@@ -85,10 +85,6 @@ export default function InhalerEditPage() {
               ))}
             </SelectContent>
           </Select>
-        </FieldRow>
-
-        <FieldRow label="排序" required>
-          <Input value={form.order} onChange={(e) => update("order", e.target.value)} className="bg-muted/50 text-sm" type="number" />
         </FieldRow>
 
         <div className="flex justify-end mt-6 pt-4 border-t border-border">
