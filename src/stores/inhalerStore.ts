@@ -19,6 +19,7 @@ interface InhalerStore {
   addCategory: (cat: Omit<InhalerCategory, "id">) => void;
   updateCategory: (id: number, updates: Partial<InhalerCategory>) => void;
   deleteCategory: (id: number) => void;
+  reorderCategories: (orderedIds: number[]) => void;
   addInhaler: (inhaler: Omit<Inhaler, "id">) => void;
   updateInhaler: (id: number, updates: Partial<Inhaler>) => void;
   deleteInhaler: (id: number) => void;
@@ -53,6 +54,15 @@ export const useInhalerStore = create<InhalerStore>((set, get) => ({
   },
   deleteCategory: (id) => {
     set({ categories: get().categories.filter((c) => c.id !== id) });
+  },
+  reorderCategories: (orderedIds) => {
+    const { categories } = get();
+    const reordered = orderedIds.map((id, index) => {
+      const c = categories.find((cat) => cat.id === id)!;
+      return { ...c, order: index + 1 };
+    });
+    const remaining = categories.filter((c) => !orderedIds.includes(c.id));
+    set({ categories: [...reordered, ...remaining] });
   },
   addInhaler: (inhaler) => {
     const { inhalers } = get();
