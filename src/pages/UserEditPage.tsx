@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,15 +11,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-
-const mockUsers: Record<string, { name: string; account: string; title: string; role: string; clinic: string }> = {
-  "1": { name: "CodingIT Admin", account: "service@codingit.tw", title: "Admin", role: "管理者", clinic: "" },
-  "2": { name: "Admin", account: "vivien5513745@gmail.com", title: "Admin", role: "管理者", clinic: "" },
-  "3": { name: "Admin", account: "shuo6878@gmail.com", title: "Admin", role: "管理者", clinic: "" },
-  "4": { name: "Admin", account: "ibreath1063@gmail.com", title: "Admin", role: "管理者", clinic: "" },
-  "5": { name: "愛而生", account: "service.ibreath@gmail.com", title: "測試", role: "診所", clinic: "健康呼吸" },
-  "6": { name: "測試", account: "ybeei740317@gmail.com", title: "醫師", role: "診所", clinic: "中崙國際診所" },
-};
+import { fetchUser, createUser, updateUser } from "@/api/users";
+import { fetchClinicList } from "@/api/clinics";
 
 interface FieldRowProps {
   label: string;
@@ -45,33 +39,104 @@ function FieldRow({ label, required, children }: FieldRowProps) {
 export default function UserEditPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isNew = !id;
-  const existing = id && mockUsers[id] ? mockUsers[id] : null;
 
   const [form, setForm] = useState({
-    role: existing?.role || "",
-    clinic: existing?.clinic || "",
-    name: existing?.name || "",
-    account: existing?.account || "",
-    title: existing?.title || "",
+    roleid: "",
+    clinicid: "",
+    name: "",
+    account: "",
+    title: "",
+  });
+
+  // 編輯模式：取得使用者資料
+  const { data: userData } = useQuery({
+    queryKey: ["user", id],
+    queryFn: () => fetchUser(Number(id)),
+    enabled: !isNew,
+  });
+
+  useEffect(() => {
+    if (userData) {
+      setForm((prev) => ({
+        ...prev,
+        name: userData.name ?? "",
+        account: userData.email ?? "",
+        title: userData.jobTitle ?? "",
+      }));
+    }
+  }, [userData]);
+
+  // 新增模式：診所選單
+  const { data: clinics = [] } = useQuery({
+    queryKey: ["clinics"],
+    queryFn: () => fetchClinicList(),
+    enabled: isNew,
   });
 
   const update = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  // 新增
+  const createMutation = useMutation({
+    mutationFn: createUser,
+    onSuccess: () => {
+      toast.success("已新增使用者");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      navigate("/users");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
+    },
+  });
+
+  // 修改
+  const updateMutation = useMutation({
+    mutationFn: updateUser,
+    onSuccess: () => {
+      toast.success("已儲存變更");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      navigate("/users");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
+    },
+  });
+
   const handleSave = () => {
-    if (!form.name.trim() || !form.title.trim()) {
-      toast.error("請填寫所有必填欄位");
-      return;
+    if (isNew) {
+      if (!form.roleid || !form.name.trim() || !form.account.trim() || !form.title.trim()) {
+        toast.error("請填寫所有必填欄位");
+        return;
+      }
+      const roleid = Number(form.roleid);
+      if (roleid === 2 && !form.clinicid) {
+        toast.error("請填寫所有必填欄位");
+        return;
+      }
+      createMutation.mutate({
+        username: form.name.trim(),
+        email: form.account.trim(),
+        jobtitle: form.title.trim(),
+        roleid,
+        clinicid: roleid === 2 ? Number(form.clinicid) : null,
+      });
+    } else {
+      if (!form.name.trim() || !form.title.trim()) {
+        toast.error("請填寫所有必填欄位");
+        return;
+      }
+      updateMutation.mutate({
+        id: Number(id),
+        username: form.name.trim(),
+        jobtitle: form.title.trim(),
+      });
     }
-    if (isNew && (!form.role || !form.account.trim())) {
-      toast.error("請填寫所有必填欄位");
-      return;
-    }
-    toast.success(isNew ? "已新增使用者" : "已儲存變更");
-    navigate("/users");
   };
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div>
@@ -86,27 +151,26 @@ export default function UserEditPage() {
         {isNew ? (
           <>
             <FieldRow label="身份" required>
-              <Select value={form.role} onValueChange={(v) => update("role", v)}>
+              <Select value={form.roleid} onValueChange={(v) => update("roleid", v)}>
                 <SelectTrigger className="bg-muted/50 text-sm">
                   <SelectValue placeholder="---" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="管理者">管理者</SelectItem>
-                  <SelectItem value="診所">診所</SelectItem>
+                  <SelectItem value="1">管理者</SelectItem>
+                  <SelectItem value="2">診所</SelectItem>
                 </SelectContent>
               </Select>
             </FieldRow>
 
             <FieldRow label="診所別" required>
-              <Select value={form.clinic} onValueChange={(v) => update("clinic", v)}>
+              <Select value={form.clinicid} onValueChange={(v) => update("clinicid", v)}>
                 <SelectTrigger className="bg-muted/50 text-sm">
                   <SelectValue placeholder="---" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="健康呼吸">健康呼吸</SelectItem>
-                  <SelectItem value="中崙國際診所">中崙國際診所</SelectItem>
-                  <SelectItem value="關心診所">關心診所</SelectItem>
-                  <SelectItem value="愷馨耳鼻喉科診所">愷馨耳鼻喉科診所</SelectItem>
+                  {clinics.map((c) => (
+                    <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </FieldRow>
@@ -140,7 +204,7 @@ export default function UserEditPage() {
         )}
 
         <div className="flex justify-end mt-6 pt-4 border-t border-border">
-          <Button onClick={handleSave} className="px-8">
+          <Button onClick={handleSave} className="px-8" disabled={isSaving}>
             {isNew ? "新增" : "儲存"}
           </Button>
         </div>

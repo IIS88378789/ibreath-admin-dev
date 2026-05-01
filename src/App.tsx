@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AdminLayout from "./components/AdminLayout";
+import LoginPage from "./pages/LoginPage";
 import ClinicsPage from "./pages/ClinicsPage";
 import UsersPage from "./pages/UsersPage";
 import UserEditPage from "./pages/UserEditPage";
@@ -17,8 +18,16 @@ import ConsentFormEditPage from "./pages/ConsentFormEditPage";
 import FormEditPage from "./pages/FormEditPage";
 import ClinicEditPage from "./pages/ClinicEditPage";
 import NotFound from "./pages/NotFound";
+import { isAuthenticated } from "./lib/auth";
 
 const queryClient = new QueryClient();
+
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -27,8 +36,15 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/" element={<Navigate to="/clinics" replace />} />
-          <Route element={<AdminLayout />}>
+          <Route
+            element={
+              <RequireAuth>
+                <AdminLayout />
+              </RequireAuth>
+            }
+          >
             <Route path="/clinics" element={<ClinicsPage />} />
             <Route path="/clinics/new" element={<ClinicEditPage />} />
             <Route path="/clinics/:id/edit" element={<ClinicEditPage />} />

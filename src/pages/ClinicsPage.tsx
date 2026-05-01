@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Search, RotateCcw, Plus, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,50 +14,62 @@ import {
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { fetchClinicList, deleteClinic } from "@/api/clinics";
 
-interface Clinic {
-  id: number;
-  name: string;
-  patientCount: number;
-}
-
-const initialClinics: Clinic[] = [
-  { id: 1, name: "健康呼吸", patientCount: 116 },
-  { id: 2, name: "中崙國際診所", patientCount: 37 },
-  { id: 3, name: "關心診所", patientCount: 249 },
-  { id: 4, name: "愷馨耳鼻喉科診所", patientCount: 9 },
-];
+const PAGE_SIZE = 10;
 
 export default function ClinicsPage() {
   const navigate = useNavigate();
-  const [clinics, setClinics] = useState<Clinic[]>(initialClinics);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
-  const [filtered, setFiltered] = useState<Clinic[]>(initialClinics);
+  const [submittedSearch, setSubmittedSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const { data: clinics = [], isLoading } = useQuery({
+    queryKey: ["clinics", submittedSearch],
+    queryFn: () => fetchClinicList(submittedSearch || undefined),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteClinic,
+    onSuccess: () => {
+      toast.success("已刪除診所");
+      queryClient.invalidateQueries({ queryKey: ["clinics"] });
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
+    },
+  });
+
+  const totalPages = Math.max(1, Math.ceil(clinics.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paged = useMemo(
+    () => clinics.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [clinics, safePage]
+  );
 
   const handleSearch = () => {
-    const result = clinics.filter((c) => c.name.includes(search));
-    setFiltered(result);
+    setCurrentPage(1);
+    setSubmittedSearch(search);
   };
 
   const handleReset = () => {
     setSearch("");
-    setFiltered(clinics);
+    setSubmittedSearch("");
+    setCurrentPage(1);
   };
 
-  const handleAdd = () => {
-    navigate("/clinics/new");
-  };
-
-  const handleEdit = (clinic: Clinic) => {
-    navigate(`/clinics/${clinic.id}/edit`);
-  };
-
-  const handleDelete = (id: number) => {
-    const updated = clinics.filter((c) => c.id !== id);
-    setClinics(updated);
-    setFiltered(updated.filter((c) => c.name.includes(search)));
-    toast.success("已刪除診所");
-  };
+  // 產生頁碼陣列（含省略號），與 POC 相同邏輯
+  const pageItems = useMemo(() => {
+    const nums = Array.from({ length: totalPages }, (_, i) => i + 1).filter(
+      (p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 2
+    );
+    return nums.reduce<(number | "...")[]>((acc, p, idx, arr) => {
+      if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("...");
+      acc.push(p);
+      return acc;
+    }, []);
+  }, [totalPages, safePage]);
 
   return (
     <div>
@@ -84,7 +97,7 @@ export default function ClinicsPage() {
             重置
           </Button>
           <div className="flex-1" />
-          <Button variant="outline" size="sm" onClick={handleAdd} className="text-[14px]">
+          <Button variant="outline" size="sm" onClick={() => navigate("/clinics/new")} className="text-[14px]">
             <Plus className="h-4 w-4 mr-1" />
             新增診所
           </Button>
@@ -101,40 +114,79 @@ export default function ClinicsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((clinic) => (
-              <TableRow key={clinic.id}>
-                <TableCell className="font-medium text-sm text-foreground">{clinic.name}</TableCell>
-                <TableCell className="text-sm text-foreground">{clinic.patientCount}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <Button size="sm" onClick={() => handleEdit(clinic)} className="text-[13px]">
-                      <Pencil className="h-3.5 w-3.5 mr-1" />
-                      編輯
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleDelete(clinic.id)}
-                      className="text-[13px]"
-                    >
-                      <X className="h-3.5 w-3.5 mr-1" />
-                      刪除
-                    </Button>
-                  </div>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                  載入中...
                 </TableCell>
               </TableRow>
-            ))}
-            {filtered.length === 0 && (
+            ) : paged.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
                   沒有找到診所
                 </TableCell>
               </TableRow>
+            ) : (
+              paged.map((clinic) => (
+                <TableRow key={clinic.id}>
+                  <TableCell className="font-medium text-sm text-foreground">{clinic.name}</TableCell>
+                  <TableCell className="text-sm text-foreground">{clinic.count}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => navigate(`/clinics/${clinic.id}/edit`)}
+                        className="text-[13px]"
+                      >
+                        <Pencil className="h-3.5 w-3.5 mr-1" />
+                        編輯
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => deleteMutation.mutate(clinic.id)}
+                        disabled={deleteMutation.isPending}
+                        className="text-[13px]"
+                      >
+                        <X className="h-3.5 w-3.5 mr-1" />
+                        刪除
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
             )}
           </TableBody>
         </Table>
-      </div>
 
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+            <p className="text-sm text-muted-foreground">
+              第 {safePage} 頁，共 {totalPages} 頁（{clinics.length} 筆）
+            </p>
+            <div className="flex items-center gap-1">
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage(1)} disabled={safePage === 1}>«</Button>
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={safePage === 1}>‹</Button>
+              {pageItems.map((p, idx) =>
+                p === "..." ? (
+                  <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground text-sm">…</span>
+                ) : (
+                  <Button
+                    key={p}
+                    variant={p === safePage ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPage(p as number)}
+                  >
+                    {p}
+                  </Button>
+                )
+              )}
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}>›</Button>
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage(totalPages)} disabled={safePage === totalPages}>»</Button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

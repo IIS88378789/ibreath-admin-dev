@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import step1Image from "@/assets/step1-create-channel.png";
 import stepFig1 from "@/assets/step-fig1.png";
 import stepFig2 from "@/assets/step-fig2.png";
@@ -17,60 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Copy } from "lucide-react";
 import { toast } from "sonner";
-import { useDiseaseStore } from "@/stores/diseaseStore";
-
-const mockClinics: Record<string, {
-  name: string;
-  isTaichungAssociation: string;
-  businessGroup: string;
-  medicalCode: string;
-  appointmentUrl: string;
-  diseases: string[];
-  lineChannelId: string;
-  lineChannelSecret: string;
-  lineChannelToken: string;
-  lineLoginId: string;
-  lineLoginSecret: string;
-  webHook: string;
-  lineLoginCallback: string;
-  surveyUrl: string;
-}> = {
-  "1": {
-    name: "健康呼吸",
-    isTaichungAssociation: "no",
-    businessGroup: "taipei",
-    medicalCode: "1101100011",
-    appointmentUrl: "https://www.mmh.org.tw/register_divide.php?depid=3",
-    diseases: ["氣喘", "肺阻塞"],
-    lineChannelId: "2003809033",
-    lineChannelSecret: "05cabeb5741e2c1f6e84f9893b59935f",
-    lineChannelToken: "gtCli+Shf6PBg3MMZeEh7b+OKYJwldBVbg8EjMH1wSgccH",
-    lineLoginId: "2004385272",
-    lineLoginSecret: "9f8a6a1f0d44c492ff91da0652721618",
-    webHook: "https://bot.i-breaths.com/api/ebp5hkotd8/webhook",
-    lineLoginCallback: "https://bot.i-breaths.com/ebp5hkotd8/callback/line",
-    surveyUrl: "https://bot.i-breaths.com/ebp5hkotd8",
-  },
-};
-
-const defaultForm = {
-  name: "",
-  isTaichungAssociation: "no",
-  businessGroup: "",
-  medicalCode: "",
-  appointmentUrl: "",
-  diseases: [] as string[],
-  lineChannelId: "",
-  lineChannelSecret: "",
-  lineChannelToken: "",
-  lineLoginId: "",
-  lineLoginSecret: "",
-  webHook: "",
-  lineLoginCallback: "",
-  surveyUrl: "",
-};
+import {
+  fetchClinic,
+  fetchSalesList,
+  fetchDiseasesGroupList,
+  createClinic,
+  updateClinic,
+} from "@/api/clinics";
 
 interface FieldRowProps {
   label: string;
@@ -197,29 +152,105 @@ function StepGuide() {
   );
 }
 
+const defaultForm = {
+  name: "",
+  isTcma: false,
+  saleId: "",
+  idNumber: "",
+  appointmentUrl: "",
+  diseasegroupids: [] as string[],
+  lineChannelId: "",
+  lineChannelSecret: "",
+  lineChannelToken: "",
+  lineLoginId: "",
+  lineLoginSecret: "",
+  webHook: "",
+  lineLoginCallBack: "",
+  questionnaireURL: "",
+};
+
 export default function ClinicEditPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isNew = !id;
-  const { diseases } = useDiseaseStore();
+  const clinicId = id ? Number(id) : null;
 
-  // Get unique categories from disease store
-  const diseaseCategories = [...new Set(diseases.map((d) => d.category))];
+  const [form, setForm] = useState(defaultForm);
+  const [initialized, setInitialized] = useState(false);
 
-  const initial = id && mockClinics[id] ? mockClinics[id] : defaultForm;
-  const [form, setForm] = useState(initial);
+  // 業務組別選單
+  const { data: salesList = [] } = useQuery({
+    queryKey: ["salesList"],
+    queryFn: fetchSalesList,
+  });
 
-  const update = (field: string, value: string) => {
+  // 疾病群組選單
+  const { data: diseasesGroupList = [] } = useQuery({
+    queryKey: ["diseasesGroupList"],
+    queryFn: fetchDiseasesGroupList,
+  });
+
+  // 載入診所資料（編輯模式）
+  const { data: clinicData } = useQuery({
+    queryKey: ["clinic", clinicId],
+    queryFn: () => fetchClinic(clinicId!),
+    enabled: !isNew && clinicId !== null,
+  });
+
+  // 當 API 資料回來後初始化表單
+  useEffect(() => {
+    if (!isNew && clinicData && !initialized) {
+      setForm({
+        name: clinicData.name ?? "",
+        isTcma: clinicData.isTcma ?? false,
+        saleId: String(clinicData.saleId ?? ""),
+        idNumber: clinicData.idNumber ?? "",
+        appointmentUrl: clinicData.reserveUrl ?? "",
+        diseasegroupids: clinicData.diseasegroupItems
+          .filter((d) => d.selected)
+          .map((d) => d.value),
+        lineChannelId: clinicData.lineChannelId ?? "",
+        lineChannelSecret: clinicData.lineChannelSecret ?? "",
+        lineChannelToken: clinicData.lineChannelToken ?? "",
+        lineLoginId: clinicData.lineLoginId ?? "",
+        lineLoginSecret: clinicData.lineLoginSecret ?? "",
+        webHook: clinicData.webHook ?? "",
+        lineLoginCallBack: clinicData.lineLoginCallBack ?? "",
+        questionnaireURL: clinicData.questionnaireURL ?? "",
+      });
+      setInitialized(true);
+    }
+  }, [clinicData, isNew, initialized]);
+
+  const createMutation = useMutation({
+    mutationFn: createClinic,
+    onSuccess: () => {
+      toast.success("已新增診所");
+      navigate("/clinics");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: updateClinic,
+    onSuccess: () => {
+      toast.success("已儲存變更");
+      navigate("/clinics");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const update = (field: string, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const toggleDisease = (category: string) => {
+  const toggleDisease = (value: string) => {
     setForm((prev) => {
-      const current = prev.diseases || [];
-      const next = current.includes(category)
-        ? current.filter((c) => c !== category)
-        : [...current, category];
-      return { ...prev, diseases: next };
+      const current = prev.diseasegroupids;
+      const next = current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value];
+      return { ...prev, diseasegroupids: next };
     });
   };
 
@@ -233,9 +264,48 @@ export default function ClinicEditPage() {
       toast.error("請輸入診所名稱");
       return;
     }
-    toast.success(isNew ? "已新增診所" : "已儲存變更");
-    navigate("/clinics");
+    if (!form.saleId) {
+      toast.error("請選擇業務組別");
+      return;
+    }
+
+    if (isNew) {
+      createMutation.mutate({
+        IsTcma: form.isTcma,
+        Name: form.name.trim(),
+        IdNumber: form.idNumber.trim(),
+        SaleId: Number(form.saleId),
+        LineChannelId: form.lineChannelId.trim(),
+        LineChannelSecret: form.lineChannelSecret.trim(),
+        LineLoginId: form.lineLoginId.trim(),
+        LineLoginSecret: form.lineLoginSecret.trim(),
+        LineChannelToken: form.lineChannelToken.trim(),
+        Diseasegroupids: form.diseasegroupids,
+      });
+    } else {
+      updateMutation.mutate({
+        Id: clinicId!,
+        IsTcma: form.isTcma,
+        Name: form.name.trim(),
+        IdNumber: form.idNumber.trim(),
+        SaleId: Number(form.saleId),
+        LineChannelId: form.lineChannelId.trim(),
+        LineChannelSecret: form.lineChannelSecret.trim(),
+        LineLoginId: form.lineLoginId.trim(),
+        LineLoginSecret: form.lineLoginSecret.trim(),
+        LineChannelToken: form.lineChannelToken.trim(),
+        Diseasegroupids: form.diseasegroupids,
+      });
+    }
   };
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
+
+  // 決定疾病列表顯示來源：編輯模式用 API 回傳的 diseasegroupItems（含 selected 狀態），
+  // 新增模式用 diseasesGroupList
+  const diseaseOptions = !isNew && clinicData
+    ? clinicData.diseasegroupItems
+    : diseasesGroupList;
 
   return (
     <div>
@@ -247,14 +317,12 @@ export default function ClinicEditPage() {
       </h1>
 
       <div className="flex gap-6 items-start">
-        {/* Left: Step Guide (only for new) */}
         {isNew && (
           <div className="w-[420px] shrink-0">
             <StepGuide />
           </div>
         )}
 
-        {/* Right: Form */}
         <div className={`bg-card rounded-lg shadow-sm p-6 ${isNew ? "flex-1" : "max-w-3xl mx-auto w-full"}`}>
           <h2 className="text-lg font-semibold mb-2">診所資訊</h2>
 
@@ -268,8 +336,8 @@ export default function ClinicEditPage() {
 
           <FieldRow label="是否為台中醫師公會" required>
             <RadioGroup
-              value={form.isTaichungAssociation}
-              onValueChange={(v) => update("isTaichungAssociation", v)}
+              value={form.isTcma ? "yes" : "no"}
+              onValueChange={(v) => update("isTcma", v === "yes")}
               className="flex items-center gap-6"
             >
               <div className="flex items-center gap-2">
@@ -284,43 +352,44 @@ export default function ClinicEditPage() {
           </FieldRow>
 
           <FieldRow label="業務組別" required>
-            <Select value={form.businessGroup} onValueChange={(v) => update("businessGroup", v)}>
+            <Select value={form.saleId} onValueChange={(v) => update("saleId", v)}>
               <SelectTrigger className="bg-muted/50 text-sm">
                 <SelectValue placeholder="請選擇" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="taipei">臺北業務組</SelectItem>
-                <SelectItem value="central">中區業務組</SelectItem>
-                <SelectItem value="south">南區業務組</SelectItem>
-                <SelectItem value="east">東區業務組</SelectItem>
-                <SelectItem value="kaohsiung">高屏業務組</SelectItem>
+                {salesList.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.text}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </FieldRow>
 
           <FieldRow label="醫事機構代碼" required>
             <Input
-              value={form.medicalCode}
-              onChange={(e) => update("medicalCode", e.target.value)}
+              value={form.idNumber}
+              onChange={(e) => update("idNumber", e.target.value)}
               className="bg-muted/50 text-sm"
             />
           </FieldRow>
 
           <FieldRow label="疾病別" required>
             <div className="flex flex-wrap gap-4">
-              {diseaseCategories.map((cat) => (
-                <div key={cat} className="flex items-center gap-2">
+              {diseaseOptions.map((d) => (
+                <div key={d.value} className="flex items-center gap-2">
                   <Checkbox
-                    id={`disease-${cat}`}
-                    checked={(form.diseases || []).includes(cat)}
-                    onCheckedChange={() => toggleDisease(cat)}
+                    id={`disease-${d.value}`}
+                    checked={form.diseasegroupids.includes(d.value)}
+                    onCheckedChange={() => toggleDisease(d.value)}
                   />
-                  <Label htmlFor={`disease-${cat}`} className="text-sm cursor-pointer">{cat}</Label>
+                  <Label htmlFor={`disease-${d.value}`} className="text-sm cursor-pointer">
+                    {d.text}
+                  </Label>
                 </div>
               ))}
             </div>
           </FieldRow>
-
 
           <FieldRow
             label="Line Channel ID"
@@ -382,7 +451,7 @@ export default function ClinicEditPage() {
             />
           </FieldRow>
 
-          {/* Read-only fields shown only in edit mode */}
+          {/* 唯讀欄位，只在編輯模式顯示 */}
           {!isNew && (
             <>
               <FieldRow label="Web Hook">
@@ -396,8 +465,8 @@ export default function ClinicEditPage() {
 
               <FieldRow label="Line Login Call Back">
                 <div className="flex items-center gap-2">
-                  <Input value={form.lineLoginCallback} readOnly className="bg-muted/50 text-sm flex-1" />
-                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(form.lineLoginCallback)} className="text-sm shrink-0">
+                  <Input value={form.lineLoginCallBack} readOnly className="bg-muted/50 text-sm flex-1" />
+                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(form.lineLoginCallBack)} className="text-sm shrink-0">
                     複製網址
                   </Button>
                 </div>
@@ -405,8 +474,8 @@ export default function ClinicEditPage() {
 
               <FieldRow label="問卷網址">
                 <div className="flex items-center gap-2">
-                  <Input value={form.surveyUrl} readOnly className="bg-muted/50 text-sm flex-1" />
-                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(form.surveyUrl)} className="text-sm shrink-0">
+                  <Input value={form.questionnaireURL} readOnly className="bg-muted/50 text-sm flex-1" />
+                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(form.questionnaireURL)} className="text-sm shrink-0">
                     複製網址
                   </Button>
                 </div>
@@ -415,8 +484,8 @@ export default function ClinicEditPage() {
           )}
 
           <div className="flex justify-end mt-6 pt-4 border-t border-border">
-            <Button onClick={handleSave} className="px-8">
-              {isNew ? "新增" : "儲存"}
+            <Button onClick={handleSave} className="px-8" disabled={isSaving}>
+              {isSaving ? "儲存中..." : isNew ? "新增" : "儲存"}
             </Button>
           </div>
         </div>
