@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Search, RotateCcw, Plus, Pencil, X, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,12 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { useInhalerStore, type Inhaler } from "@/stores/inhalerStore";
+import {
+  fetchInhalerCategoryList,
+  fetchInhalerTypeList,
+  deleteInhalerType,
+  InhalerTypeItem,
+} from "@/api/inhalers";
 import {
   DndContext,
   closestCenter,
@@ -31,7 +37,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 interface SortableRowProps {
-  inhaler: Inhaler;
+  inhaler: InhalerTypeItem;
   onEdit: () => void;
   onDelete: () => void;
 }
@@ -54,11 +60,11 @@ function SortableRow({ inhaler, onEdit, onDelete }: SortableRowProps) {
           <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground">
             <GripVertical className="h-4 w-4" />
           </button>
-          {inhaler.order}
+          {inhaler.sort}
         </div>
       </TableCell>
       <TableCell className="text-sm font-medium">{inhaler.name}</TableCell>
-      <TableCell className="text-sm">{inhaler.category}</TableCell>
+      <TableCell className="text-sm">{inhaler.inhalergpName}</TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-2">
           <Button size="sm" className="text-[13px]" onClick={onEdit}>
@@ -75,14 +81,52 @@ function SortableRow({ inhaler, onEdit, onDelete }: SortableRowProps) {
 
 export default function InhalersPage() {
   const navigate = useNavigate();
-  const { inhalers, categories, deleteInhaler, reorderInhalers } = useInhalerStore();
-  const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const queryClient = useQueryClient();
 
-  const sorted = [...inhalers].sort((a, b) => a.order - b.order);
-  const filtered = sorted
-    .filter((i) => (categoryFilter === "all" || i.category === categoryFilter))
-    .filter((i) => i.name.includes(search));
+  const [searchName, setSearchName] = useState("");
+  const [searchCategoryId, setSearchCategoryId] = useState("all");
+  const [queryParams, setQueryParams] = useState<{ name?: string; inhalergpid?: number }>({});
+  const [localOrder, setLocalOrder] = useState<number[] | null>(null);
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ["inhaler-categories"],
+    queryFn: fetchInhalerCategoryList,
+  });
+
+  const { data: inhalers = [], isLoading } = useQuery({
+    queryKey: ["inhalers", queryParams],
+    queryFn: () => fetchInhalerTypeList(queryParams),
+    select: (data) => [...data].sort((a, b) => a.sort - b.sort),
+  });
+
+  const sorted = localOrder
+    ? localOrder.map((id) => inhalers.find((i) => i.id === id)!).filter(Boolean)
+    : inhalers;
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteInhalerType,
+    onSuccess: () => {
+      toast.success("已刪除吸入器");
+      queryClient.invalidateQueries({ queryKey: ["inhalers"] });
+      setLocalOrder(null);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const handleSearch = () => {
+    const params: { name?: string; inhalergpid?: number } = {};
+    if (searchName.trim()) params.name = searchName.trim();
+    if (searchCategoryId !== "all") params.inhalergpid = Number(searchCategoryId);
+    setQueryParams(params);
+    setLocalOrder(null);
+  };
+
+  const handleReset = () => {
+    setSearchName("");
+    setSearchCategoryId("all");
+    setQueryParams({});
+    setLocalOrder(null);
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -92,23 +136,11 @@ export default function InhalersPage() {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-
     const oldIndex = sorted.findIndex((i) => i.id === active.id);
     const newIndex = sorted.findIndex((i) => i.id === over.id);
     const reordered = arrayMove(sorted, oldIndex, newIndex);
-    reorderInhalers(reordered.map((i) => i.id));
+    setLocalOrder(reordered.map((i) => i.id));
     toast.success("已更新排序");
-  };
-
-  const handleSearch = () => {};
-  const handleReset = () => {
-    setSearch("");
-    setCategoryFilter("all");
-  };
-
-  const handleDelete = (id: number) => {
-    deleteInhaler(id);
-    toast.success("已刪除吸入器");
   };
 
   return (
@@ -121,8 +153,8 @@ export default function InhalersPage() {
           <div>
             <Label className="text-[14px] font-medium mb-2 block">吸入器名稱</Label>
             <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
               className="w-52 text-[14px]"
               placeholder="輸入吸入器名稱"
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -130,14 +162,14 @@ export default function InhalersPage() {
           </div>
           <div>
             <Label className="text-[14px] font-medium mb-2 block">吸入器分類</Label>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <Select value={searchCategoryId} onValueChange={setSearchCategoryId}>
               <SelectTrigger className="w-44 text-[14px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all" className="text-[14px]">全部</SelectItem>
                 {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.name} className="text-[14px]">{cat.name}</SelectItem>
+                  <SelectItem key={cat.id} value={String(cat.id)} className="text-[14px]">{cat.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -170,20 +202,25 @@ export default function InhalersPage() {
             </TableRow>
           </TableHeader>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={filtered.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+            <SortableContext items={sorted.map((i) => i.id)} strategy={verticalListSortingStrategy}>
               <TableBody>
-                {filtered.map((inhaler) => (
-                  <SortableRow
-                    key={inhaler.id}
-                    inhaler={inhaler}
-                    onEdit={() => navigate(`/inhalers/${inhaler.id}/edit`)}
-                    onDelete={() => handleDelete(inhaler.id)}
-                  />
-                ))}
-                {filtered.length === 0 && (
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">載入中...</TableCell>
+                  </TableRow>
+                ) : sorted.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">沒有找到吸入器</TableCell>
                   </TableRow>
+                ) : (
+                  sorted.map((inhaler) => (
+                    <SortableRow
+                      key={inhaler.id}
+                      inhaler={inhaler}
+                      onEdit={() => navigate(`/inhalers/${inhaler.id}/edit`)}
+                      onDelete={() => deleteMutation.mutate(inhaler.id)}
+                    />
+                  ))
                 )}
               </TableBody>
             </SortableContext>

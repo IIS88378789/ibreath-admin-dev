@@ -134,9 +134,8 @@ export async function updateUser(body: UserUpdateRequest): Promise<BaseResponse>
 // ---------- 刪除使用者 ----------
 
 export async function deleteUser(id: number): Promise<BaseResponse> {
-  const res = await apiFetch("/api/cms/userdelete", {
+  const res = await apiFetch(`/api/cms/userdelete/${id}`, {
     method: "DELETE",
-    body: JSON.stringify({ id }),
   });
   if (!res.ok) throw new Error(`刪除使用者失敗: ${res.status}`);
   const data: BaseResponse = await res.json();

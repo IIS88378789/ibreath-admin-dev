@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useInhalerStore } from "@/stores/inhalerStore";
+import { fetchInhalerCategoryList, createInhalerType, updateInhalerType } from "@/api/inhalers";
 
 interface FieldRowProps {
   label: string;
@@ -31,34 +32,65 @@ function FieldRow({ label, required, children }: FieldRowProps) {
 export default function InhalerEditPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { inhalers, categories, addInhaler, updateInhaler } = useInhalerStore();
+  const queryClient = useQueryClient();
   const isNew = !id;
-  const existing = id ? inhalers.find((i) => i.id === Number(id)) : null;
 
   const [form, setForm] = useState({
-    name: existing?.name || "",
-    category: existing?.category || (categories[0]?.name || ""),
+    name: "",
+    inhalergpid: "",
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ["inhaler-categories"],
+    queryFn: fetchInhalerCategoryList,
   });
 
   const update = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const createMutation = useMutation({
+    mutationFn: createInhalerType,
+    onSuccess: () => {
+      toast.success("已新增吸入器");
+      queryClient.invalidateQueries({ queryKey: ["inhalers"] });
+      navigate("/inhalers");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: updateInhalerType,
+    onSuccess: () => {
+      toast.success("已儲存變更");
+      queryClient.invalidateQueries({ queryKey: ["inhalers"] });
+      navigate("/inhalers");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
   const handleSave = () => {
-    if (!form.name.trim() || !form.category) {
+    if (!form.name.trim() || !form.inhalergpid) {
       toast.error("請填寫所有必填欄位");
       return;
     }
     if (isNew) {
-      const nextOrder = (inhalers.length > 0 ? Math.max(...inhalers.map((i) => i.order)) : 0) + 1;
-      addInhaler({ name: form.name.trim(), order: nextOrder, category: form.category });
-      toast.success("已新增吸入器");
+      createMutation.mutate({
+        name: form.name.trim(),
+        sort: 0,
+        Inhalergpid: Number(form.inhalergpid),
+      });
     } else {
-      updateInhaler(Number(id), { name: form.name.trim(), category: form.category });
-      toast.success("已儲存變更");
+      updateMutation.mutate({
+        id: Number(id),
+        name: form.name.trim(),
+        sort: 0,
+        Inhalergpid: Number(form.inhalergpid),
+      });
     }
-    navigate("/inhalers");
   };
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div>
@@ -75,20 +107,22 @@ export default function InhalerEditPage() {
         </FieldRow>
 
         <FieldRow label="分類" required>
-          <Select value={form.category} onValueChange={(v) => update("category", v)}>
+          <Select value={form.inhalergpid} onValueChange={(v) => update("inhalergpid", v)}>
             <SelectTrigger className="bg-muted/50 text-sm">
-              <SelectValue />
+              <SelectValue placeholder="---" />
             </SelectTrigger>
             <SelectContent>
               {categories.map((cat) => (
-                <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </FieldRow>
 
         <div className="flex justify-end mt-6 pt-4 border-t border-border">
-          <Button onClick={handleSave} className="px-8">{isNew ? "新增" : "儲存"}</Button>
+          <Button onClick={handleSave} className="px-8" disabled={isSaving}>
+            {isNew ? "新增" : "儲存"}
+          </Button>
         </div>
       </div>
     </div>

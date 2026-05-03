@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, X, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,13 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { useInhalerStore, type InhalerCategory } from "@/stores/inhalerStore";
+import {
+  fetchInhalerCategoryList,
+  createInhalerCategory,
+  updateInhalerCategory,
+  deleteInhalerCategory,
+  InhalerCategoryItem,
+} from "@/api/inhalers";
 import {
   DndContext,
   closestCenter,
@@ -30,7 +37,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 interface SortableRowProps {
-  category: InhalerCategory;
+  category: InhalerCategoryItem;
   onEdit: () => void;
   onDelete: () => void;
 }
@@ -53,7 +60,7 @@ function SortableRow({ category, onEdit, onDelete }: SortableRowProps) {
           <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground">
             <GripVertical className="h-4 w-4" />
           </button>
-          {category.order}
+          {category.sort}
         </div>
       </TableCell>
       <TableCell className="text-sm font-medium">{category.name}</TableCell>
@@ -72,24 +79,62 @@ function SortableRow({ category, onEdit, onDelete }: SortableRowProps) {
 }
 
 export default function InhalerCategoriesPage() {
-  const { categories, addCategory, updateCategory, deleteCategory, reorderCategories } = useInhalerStore();
+  const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingCategory, setEditingCategory] = useState<InhalerCategoryItem | null>(null);
   const [formName, setFormName] = useState("");
+  const [localOrder, setLocalOrder] = useState<number[] | null>(null);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
+  const { data: categories = [], isLoading } = useQuery({
+    queryKey: ["inhaler-categories"],
+    queryFn: fetchInhalerCategoryList,
+    select: (data) => [...data].sort((a, b) => a.sort - b.sort),
+  });
+
+  const sorted = localOrder
+    ? localOrder.map((id) => categories.find((c) => c.id === id)!).filter(Boolean)
+    : categories;
+
+  const createMutation = useMutation({
+    mutationFn: createInhalerCategory,
+    onSuccess: () => {
+      toast.success("已新增分類");
+      queryClient.invalidateQueries({ queryKey: ["inhaler-categories"] });
+      setLocalOrder(null);
+      setDialogOpen(false);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: updateInhalerCategory,
+    onSuccess: () => {
+      toast.success("已更新分類");
+      queryClient.invalidateQueries({ queryKey: ["inhaler-categories"] });
+      setLocalOrder(null);
+      setDialogOpen(false);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteInhalerCategory,
+    onSuccess: () => {
+      toast.success("已刪除分類");
+      queryClient.invalidateQueries({ queryKey: ["inhaler-categories"] });
+      setLocalOrder(null);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
 
   const openCreate = () => {
-    setEditingId(null);
+    setEditingCategory(null);
     setFormName("");
     setDialogOpen(true);
   };
 
-  const openEdit = (cat: InhalerCategory) => {
-    setEditingId(cat.id);
+  const openEdit = (cat: InhalerCategoryItem) => {
+    setEditingCategory(cat);
     setFormName(cat.name);
     setDialogOpen(true);
   };
@@ -99,23 +144,18 @@ export default function InhalerCategoriesPage() {
       toast.error("請填寫必填欄位");
       return;
     }
-    if (editingId !== null) {
-      updateCategory(editingId, { name: formName.trim() });
-      toast.success("已更新分類");
+    if (editingCategory !== null) {
+      updateMutation.mutate({ id: editingCategory.id, name: formName.trim(), sort: editingCategory.sort });
     } else {
-      const nextOrder = (categories.length > 0 ? Math.max(...categories.map((c) => c.order)) : 0) + 1;
-      addCategory({ name: formName.trim(), order: nextOrder });
-      toast.success("已新增分類");
+      const nextSort = sorted.length > 0 ? Math.max(...sorted.map((c) => c.sort)) + 1 : 1;
+      createMutation.mutate({ name: formName.trim(), sort: nextSort });
     }
-    setDialogOpen(false);
   };
 
-  const handleDelete = (id: number) => {
-    deleteCategory(id);
-    toast.success("已刪除分類");
-  };
-
-  const sorted = [...categories].sort((a, b) => a.order - b.order);
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -123,9 +163,11 @@ export default function InhalerCategoriesPage() {
     const oldIndex = sorted.findIndex((c) => c.id === active.id);
     const newIndex = sorted.findIndex((c) => c.id === over.id);
     const reordered = arrayMove(sorted, oldIndex, newIndex);
-    reorderCategories(reordered.map((c) => c.id));
+    setLocalOrder(reordered.map((c) => c.id));
     toast.success("已更新排序");
   };
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div>
@@ -153,20 +195,23 @@ export default function InhalerCategoriesPage() {
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={sorted.map((c) => c.id)} strategy={verticalListSortingStrategy}>
               <TableBody>
-                {sorted.map((cat) => (
-                  <SortableRow
-                    key={cat.id}
-                    category={cat}
-                    onEdit={() => openEdit(cat)}
-                    onDelete={() => handleDelete(cat.id)}
-                  />
-                ))}
-                {sorted.length === 0 && (
+                {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
-                      沒有找到分類資料
-                    </TableCell>
+                    <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">載入中...</TableCell>
                   </TableRow>
+                ) : sorted.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">沒有找到分類資料</TableCell>
+                  </TableRow>
+                ) : (
+                  sorted.map((cat) => (
+                    <SortableRow
+                      key={cat.id}
+                      category={cat}
+                      onEdit={() => openEdit(cat)}
+                      onDelete={() => deleteMutation.mutate(cat.id)}
+                    />
+                  ))
                 )}
               </TableBody>
             </SortableContext>
@@ -177,7 +222,7 @@ export default function InhalerCategoriesPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingId !== null ? "編輯分類" : "新增分類"}</DialogTitle>
+            <DialogTitle>{editingCategory !== null ? "編輯分類" : "新增分類"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="flex items-center gap-4">
@@ -186,7 +231,7 @@ export default function InhalerCategoriesPage() {
               <Input value={formName} onChange={(e) => setFormName(e.target.value)} className="flex-1 text-sm" placeholder="輸入分類名稱" />
             </div>
             <div className="flex justify-end pt-2">
-              <Button size="sm" onClick={handleSave}>儲存</Button>
+              <Button size="sm" onClick={handleSave} disabled={isSaving}>儲存</Button>
             </div>
           </div>
         </DialogContent>

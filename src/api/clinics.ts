@@ -125,7 +125,7 @@ export async function updateClinic(body: ClinicUpdateRequest): Promise<BaseRespo
 // ---------- 刪除診所 ----------
 
 export async function deleteClinic(id: number): Promise<BaseResponse> {
-  const res = await apiFetch(`/api/cms/ClinicDelete?id=${id}`, { method: "DELETE" });
+  const res = await apiFetch(`/api/cms/ClinicDelete/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error(`刪除診所失敗: ${res.status}`);
   const data: BaseResponse = await res.json();
   if (data.statuscode !== 200) throw new Error(data.message || "刪除診所失敗");

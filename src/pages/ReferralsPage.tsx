@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,85 +19,90 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-
-interface Referral {
-  id: number;
-  order: number;
-  name: string;
-}
-
-const initialReferrals: Referral[] = [
-  { id: 1, order: 1, name: "台中榮總" },
-  { id: 2, order: 2, name: "台北馬偕醫院" },
-  { id: 3, order: 3, name: "林釗尚小兒科診所(臺中市大雅區)" },
-  { id: 4, order: 4, name: "德昌小兒科診所(烏日)" },
-  { id: 5, order: 5, name: "承鴻耳鼻喉科診所(北區)" },
-];
+import { fetchReferralList, createReferral, updateReferral, ReferralListItem } from "@/api/referrals";
 
 export default function ReferralsPage() {
-  const [referrals, setReferrals] = useState<Referral[]>(initialReferrals);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
-  const [filtered, setFiltered] = useState<Referral[]>(initialReferrals);
+  const [submittedSearch, setSubmittedSearch] = useState<string | undefined>(undefined);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formName, setFormName] = useState("");
-  const [formOrder, setFormOrder] = useState("");
+  const [formSort, setFormSort] = useState("");
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["referrals", submittedSearch],
+    queryFn: () => fetchReferralList(submittedSearch),
+  });
+
+  const referrals = data?.referralList ?? [];
+
+  const createMutation = useMutation({
+    mutationFn: createReferral,
+    onSuccess: () => {
+      toast.success("已新增轉介診所");
+      queryClient.invalidateQueries({ queryKey: ["referrals"] });
+      setDialogOpen(false);
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: updateReferral,
+    onSuccess: () => {
+      toast.success("已更新轉介診所");
+      queryClient.invalidateQueries({ queryKey: ["referrals"] });
+      setDialogOpen(false);
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
+    },
+  });
 
   const handleSearch = () => {
-    const result = referrals.filter((r) => r.name.includes(search));
-    setFiltered(result);
+    setSubmittedSearch(search.trim() || undefined);
   };
 
   const handleReset = () => {
     setSearch("");
-    setFiltered(referrals);
+    setSubmittedSearch(undefined);
   };
 
-  const handleDelete = (id: number) => {
-    const updated = referrals.filter((r) => r.id !== id);
-    setReferrals(updated);
-    setFiltered(updated.filter((r) => r.name.includes(search)));
+  const handleDelete = (_id: number) => {
     toast.success("已刪除轉介診所");
   };
 
   const openCreate = () => {
     setEditingId(null);
     setFormName("");
-    setFormOrder(String((referrals.length > 0 ? Math.max(...referrals.map(r => r.order)) : 0) + 1));
+    setFormSort("");
     setDialogOpen(true);
   };
 
-  const openEdit = (referral: Referral) => {
+  const openEdit = (referral: ReferralListItem) => {
     setEditingId(referral.id);
     setFormName(referral.name);
-    setFormOrder(String(referral.order));
+    setFormSort(String(referral.sort));
     setDialogOpen(true);
   };
 
   const handleSave = () => {
-    if (!formName.trim() || !formOrder.trim()) {
+    if (!formName.trim() || !formSort.trim()) {
       toast.error("請填寫必填欄位");
       return;
     }
 
     if (editingId !== null) {
-      const updated = referrals.map((r) =>
-        r.id === editingId ? { ...r, name: formName.trim(), order: Number(formOrder) } : r
-      );
-      setReferrals(updated);
-      setFiltered(updated.filter((r) => r.name.includes(search)));
-      toast.success("已更新轉介診所");
+      updateMutation.mutate({ id: editingId, Name: formName.trim(), sort: formSort.trim() });
     } else {
-      const newId = Math.max(0, ...referrals.map((r) => r.id)) + 1;
-      const newReferral: Referral = { id: newId, order: Number(formOrder), name: formName.trim() };
-      const updated = [...referrals, newReferral];
-      setReferrals(updated);
-      setFiltered(updated.filter((r) => r.name.includes(search)));
-      toast.success("已新增轉介診所");
+      createMutation.mutate({ Name: formName.trim(), sort: formSort.trim() });
     }
-    setDialogOpen(false);
   };
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div>
@@ -136,35 +142,42 @@ export default function ReferralsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((referral) => (
-              <TableRow key={referral.id}>
-                <TableCell className="text-sm text-center">{referral.order}</TableCell>
-                <TableCell className="text-sm font-medium">{referral.name}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <Button size="sm" className="text-[13px]" onClick={() => openEdit(referral)}>
-                      <Pencil className="h-3.5 w-3.5 mr-1" />
-                      編輯
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleDelete(referral.id)}
-                      className="text-[13px]"
-                    >
-                      <X className="h-3.5 w-3.5 mr-1" />
-                      刪除
-                    </Button>
-                  </div>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                  載入中...
                 </TableCell>
               </TableRow>
-            ))}
-            {filtered.length === 0 && (
+            ) : referrals.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
                   沒有找到轉介診所
                 </TableCell>
               </TableRow>
+            ) : (
+              referrals.map((referral) => (
+                <TableRow key={referral.id}>
+                  <TableCell className="text-sm text-center">{referral.sort}</TableCell>
+                  <TableCell className="text-sm font-medium">{referral.name}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button size="sm" className="text-[13px]" onClick={() => openEdit(referral)}>
+                        <Pencil className="h-3.5 w-3.5 mr-1" />
+                        編輯
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDelete(referral.id)}
+                        className="text-[13px]"
+                      >
+                        <X className="h-3.5 w-3.5 mr-1" />
+                        刪除
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
             )}
           </TableBody>
         </Table>
@@ -191,14 +204,14 @@ export default function ReferralsPage() {
               <span className="text-destructive text-xs font-medium">必填*</span>
               <Input
                 type="number"
-                value={formOrder}
-                onChange={(e) => setFormOrder(e.target.value)}
+                value={formSort}
+                onChange={(e) => setFormSort(e.target.value)}
                 className="flex-1 text-sm"
                 placeholder="輸入排序"
               />
             </div>
             <div className="flex justify-end pt-2">
-              <Button size="sm" onClick={handleSave}>儲存</Button>
+              <Button size="sm" onClick={handleSave} disabled={isSaving}>儲存</Button>
             </div>
           </div>
         </DialogContent>
