@@ -37,6 +37,7 @@ export default function InhalerEditPage() {
 
   const [form, setForm] = useState({
     name: "",
+    sort: "",
     inhalergpid: "",
   });
 
@@ -70,21 +71,21 @@ export default function InhalerEditPage() {
   });
 
   const handleSave = () => {
-    if (!form.name.trim() || !form.inhalergpid) {
+    if (!form.name.trim() || !form.sort.trim() || !form.inhalergpid) {
       toast.error("請填寫所有必填欄位");
       return;
     }
     if (isNew) {
       createMutation.mutate({
         name: form.name.trim(),
-        sort: 0,
+        sort: Number(form.sort),
         Inhalergpid: Number(form.inhalergpid),
       });
     } else {
       updateMutation.mutate({
         id: Number(id),
         name: form.name.trim(),
-        sort: 0,
+        sort: Number(form.sort),
         Inhalergpid: Number(form.inhalergpid),
       });
     }
@@ -104,6 +105,10 @@ export default function InhalerEditPage() {
 
         <FieldRow label="吸入器名稱" required>
           <Input value={form.name} onChange={(e) => update("name", e.target.value)} className="bg-muted/50 text-sm" />
+        </FieldRow>
+
+        <FieldRow label="排序" required>
+          <Input type="number" value={form.sort} onChange={(e) => update("sort", e.target.value)} className="bg-muted/50 text-sm" placeholder="輸入排序" />
         </FieldRow>
 
         <FieldRow label="分類" required>

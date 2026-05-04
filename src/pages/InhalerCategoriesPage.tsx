@@ -83,6 +83,7 @@ export default function InhalerCategoriesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<InhalerCategoryItem | null>(null);
   const [formName, setFormName] = useState("");
+  const [formSort, setFormSort] = useState("");
   const [localOrder, setLocalOrder] = useState<number[] | null>(null);
 
   const { data: categories = [], isLoading } = useQuery({
@@ -130,25 +131,26 @@ export default function InhalerCategoriesPage() {
   const openCreate = () => {
     setEditingCategory(null);
     setFormName("");
+    setFormSort("");
     setDialogOpen(true);
   };
 
   const openEdit = (cat: InhalerCategoryItem) => {
     setEditingCategory(cat);
     setFormName(cat.name);
+    setFormSort(String(cat.sort));
     setDialogOpen(true);
   };
 
   const handleSave = () => {
-    if (!formName.trim()) {
+    if (!formName.trim() || !formSort.trim()) {
       toast.error("請填寫必填欄位");
       return;
     }
     if (editingCategory !== null) {
-      updateMutation.mutate({ id: editingCategory.id, name: formName.trim(), sort: editingCategory.sort });
+      updateMutation.mutate({ id: editingCategory.id, name: formName.trim(), sort: Number(formSort) });
     } else {
-      const nextSort = sorted.length > 0 ? Math.max(...sorted.map((c) => c.sort)) + 1 : 1;
-      createMutation.mutate({ name: formName.trim(), sort: nextSort });
+      createMutation.mutate({ name: formName.trim(), sort: Number(formSort) });
     }
   };
 
@@ -229,6 +231,11 @@ export default function InhalerCategoriesPage() {
               <Label className="w-20 shrink-0 text-sm">分類名稱</Label>
               <span className="text-destructive text-xs font-medium">必填*</span>
               <Input value={formName} onChange={(e) => setFormName(e.target.value)} className="flex-1 text-sm" placeholder="輸入分類名稱" />
+            </div>
+            <div className="flex items-center gap-4">
+              <Label className="w-20 shrink-0 text-sm">排序</Label>
+              <span className="text-destructive text-xs font-medium">必填*</span>
+              <Input type="number" value={formSort} onChange={(e) => setFormSort(e.target.value)} className="flex-1 text-sm" placeholder="輸入排序" />
             </div>
             <div className="flex justify-end pt-2">
               <Button size="sm" onClick={handleSave} disabled={isSaving}>儲存</Button>
