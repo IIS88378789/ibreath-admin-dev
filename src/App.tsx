@@ -24,7 +24,7 @@ const queryClient = new QueryClient();
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   if (!isAuthenticated()) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
   return <>{children}</>;
 }
@@ -36,8 +36,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<LoginPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<Navigate to="/clinics" replace />} />
           <Route
             element={
               <RequireAuth>

@@ -13,7 +13,7 @@ export function checkAuthRedirect(response: Response): void {
   if (response.status === 401) {
     removeToken();
     removeUsername();
-    window.location.href = "/login";
+    window.location.href = "/";
     throw new Error("未授權，請重新登入");
   }
 }
