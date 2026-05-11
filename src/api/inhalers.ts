@@ -145,3 +145,16 @@ export async function deleteInhalerType(id: number): Promise<BaseResponse> {
   if (data.statuscode !== 200) throw new Error(data.message || "刪除吸入器失敗");
   return data;
 }
+
+// ---------- 吸入器類型重新排序 ----------
+
+export async function reorderInhalerType(ids: number[]): Promise<BaseResponse> {
+  const res = await apiFetch("/api/cms/inhalertypereorder", {
+    method: "POST",
+    body: JSON.stringify(ids),
+  });
+  if (!res.ok) throw new Error(`排序更新失敗: ${res.status}`);
+  const data: BaseResponse = await res.json();
+  if (data.statuscode !== 200) throw new Error(data.message || "排序更新失敗");
+  return data;
+}

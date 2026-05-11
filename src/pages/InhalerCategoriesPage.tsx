@@ -38,11 +38,12 @@ import { CSS } from "@dnd-kit/utilities";
 
 interface SortableRowProps {
   category: InhalerCategoryItem;
+  displaySort: number;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-function SortableRow({ category, onEdit, onDelete }: SortableRowProps) {
+function SortableRow({ category, displaySort, onEdit, onDelete }: SortableRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: category.id,
   });
@@ -60,7 +61,7 @@ function SortableRow({ category, onEdit, onDelete }: SortableRowProps) {
           <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground">
             <GripVertical className="h-4 w-4" />
           </button>
-          {category.sort}
+          {displaySort}
         </div>
       </TableCell>
       <TableCell className="text-sm font-medium">{category.name}</TableCell>
@@ -206,10 +207,11 @@ export default function InhalerCategoriesPage() {
                     <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">沒有找到分類資料</TableCell>
                   </TableRow>
                 ) : (
-                  sorted.map((cat) => (
+                  sorted.map((cat, index) => (
                     <SortableRow
                       key={cat.id}
                       category={cat}
+                      displaySort={index + 1}
                       onEdit={() => openEdit(cat)}
                       onDelete={() => deleteMutation.mutate(cat.id)}
                     />

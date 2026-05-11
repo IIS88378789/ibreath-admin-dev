@@ -16,6 +16,7 @@ import {
   fetchInhalerCategoryList,
   fetchInhalerTypeList,
   deleteInhalerType,
+  reorderInhalerType,
   InhalerTypeItem,
 } from "@/api/inhalers";
 import {
@@ -38,11 +39,12 @@ import { CSS } from "@dnd-kit/utilities";
 
 interface SortableRowProps {
   inhaler: InhalerTypeItem;
+  displaySort: number;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-function SortableRow({ inhaler, onEdit, onDelete }: SortableRowProps) {
+function SortableRow({ inhaler, displaySort, onEdit, onDelete }: SortableRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: inhaler.id,
   });
@@ -60,7 +62,7 @@ function SortableRow({ inhaler, onEdit, onDelete }: SortableRowProps) {
           <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground">
             <GripVertical className="h-4 w-4" />
           </button>
-          {inhaler.sort}
+          {displaySort}
         </div>
       </TableCell>
       <TableCell className="text-sm font-medium">{inhaler.name}</TableCell>
@@ -113,6 +115,11 @@ export default function InhalersPage() {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: reorderInhalerType,
+    onError: (err: Error) => toast.error(err.message),
+  });
+
   const handleSearch = () => {
     const params: { name?: string; inhalergpid?: number } = {};
     if (searchName.trim()) params.name = searchName.trim();
@@ -139,8 +146,11 @@ export default function InhalersPage() {
     const oldIndex = sorted.findIndex((i) => i.id === active.id);
     const newIndex = sorted.findIndex((i) => i.id === over.id);
     const reordered = arrayMove(sorted, oldIndex, newIndex);
-    setLocalOrder(reordered.map((i) => i.id));
-    toast.success("已更新排序");
+    const newIds = reordered.map((i) => i.id);
+    setLocalOrder(newIds);
+    reorderMutation.mutate(newIds, {
+      onSuccess: () => toast.success("已更新排序"),
+    });
   };
 
   return (
@@ -213,10 +223,11 @@ export default function InhalersPage() {
                     <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">沒有找到吸入器</TableCell>
                   </TableRow>
                 ) : (
-                  sorted.map((inhaler) => (
+                  sorted.map((inhaler, index) => (
                     <SortableRow
                       key={inhaler.id}
                       inhaler={inhaler}
+                      displaySort={index + 1}
                       onEdit={() => navigate(`/inhalers/${inhaler.id}/edit`)}
                       onDelete={() => deleteMutation.mutate(inhaler.id)}
                     />

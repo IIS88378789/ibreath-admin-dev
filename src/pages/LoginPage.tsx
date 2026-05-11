@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import ibreathLogo from "@/assets/ibreath-logo.png";
 import { saveToken, saveUsername } from "@/lib/auth";
+import { login } from "@/api/auth";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -23,22 +24,7 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      const apiBase = import.meta.env.VITE_API_BASE_URL ?? "";
-      const response = await fetch(`${apiBase}/api/Auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userid: userid.trim(), password: password.trim() }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`登入失敗: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
-
-      if (data.statuscode !== 200) {
-        throw new Error(data.message || "登入失敗");
-      }
+      const data = await login({ userid: userid.trim(), password: password.trim() });
 
       saveToken(data.accessToken);
       saveUsername(data.username);
