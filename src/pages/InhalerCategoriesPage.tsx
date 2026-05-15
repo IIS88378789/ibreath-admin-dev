@@ -167,7 +167,13 @@ export default function InhalerCategoriesPage() {
     const newIndex = sorted.findIndex((c) => c.id === over.id);
     const reordered = arrayMove(sorted, oldIndex, newIndex);
     setLocalOrder(reordered.map((c) => c.id));
-    toast.success("已更新排序");
+    Promise.all(
+      reordered.map((cat, index) =>
+        updateInhalerCategory({ id: cat.id, name: cat.name, sort: index + 1 })
+      )
+    )
+      .then(() => toast.success("已更新排序"))
+      .catch((err: Error) => toast.error(err.message));
   };
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
