@@ -9,11 +9,11 @@ export interface LoginResponse {
   statuscode: number;
   message: string | null;
   accessToken: string;
-  username: string;
+  username: string | null;
 }
 
 export async function login(body: LoginRequest): Promise<LoginResponse> {
-  const res = await apiFetch("/api/Auth/login", {
+  const res = await apiFetch("/api/auth/loginadmin", {
     method: "POST",
     body: JSON.stringify(body),
   });

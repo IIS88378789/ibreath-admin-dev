@@ -1,3 +1,14 @@
+export default function DiseasesPage() {
+  return (
+    <div>
+      <div className="mb-1 text-sm text-muted-foreground">疾病管理 &gt; 疾病列表</div>
+      <h1 className="text-2xl font-semibold mb-5">疾病管理</h1>
+      <p className="text-muted-foreground">功能建置中</p>
+    </div>
+  );
+}
+
+/*
 import { useState } from "react";
 import { Plus, Pencil, X, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,7 +42,6 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-
 
 const categories = ["all", "氣喘", "肺阻塞"];
 
@@ -78,13 +88,12 @@ function SortableRow({ disease, onEdit, onDelete }: SortableRowProps) {
   );
 }
 
-export default function DiseasesPage() {
+function DiseasesPageFull() {
   const { diseases, addDisease, updateDisease, deleteDisease, reorderDiseases } = useDiseaseStore();
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formName, setFormName] = useState("");
-  
   const [formCategory, setFormCategory] = useState("氣喘");
 
   const sorted = [...diseases].sort((a, b) => a.order - b.order);
@@ -98,7 +107,6 @@ export default function DiseasesPage() {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-
     const oldIndex = sorted.findIndex((d) => d.id === active.id);
     const newIndex = sorted.findIndex((d) => d.id === over.id);
     const reordered = arrayMove(sorted, oldIndex, newIndex);
@@ -115,14 +123,12 @@ export default function DiseasesPage() {
     setEditingId(null);
     setFormName("");
     setFormCategory("氣喘");
-    
     setDialogOpen(true);
   };
 
   const openEdit = (disease: { id: number; name: string; order: number; category: string }) => {
     setEditingId(disease.id);
     setFormName(disease.name);
-    
     setFormCategory(disease.category);
     setDialogOpen(true);
   };
@@ -229,3 +235,4 @@ export default function DiseasesPage() {
     </div>
   );
 }
+*/

@@ -1,3 +1,14 @@
+export default function DiseaseFormsPage() {
+  return (
+    <div>
+      <div className="mb-1 text-sm text-muted-foreground">疾病管理 &gt; 疾病相關表單</div>
+      <h1 className="text-2xl font-semibold mb-5">疾病相關表單</h1>
+      <p className="text-muted-foreground">功能建置中</p>
+    </div>
+  );
+}
+
+/*
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Pencil, X, FileText, Eye } from "lucide-react";
@@ -24,7 +35,7 @@ import { useDiseaseStore } from "@/stores/diseaseStore";
 import DocumentPreviewDialog from "@/components/DocumentPreviewDialog";
 import type { DiseaseDocument } from "@/stores/diseaseDocumentStore";
 
-export default function DiseaseFormsPage() {
+function DiseaseFormsPageFull() {
   const navigate = useNavigate();
   const { documents, deleteDocument } = useDiseaseDocumentStore();
   const { diseases } = useDiseaseStore();
@@ -141,3 +152,4 @@ export default function DiseaseFormsPage() {
     </div>
   );
 }
+*/

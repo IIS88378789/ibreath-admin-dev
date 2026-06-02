@@ -13,12 +13,14 @@ export default defineConfig(({ mode }) => ({
     },
     proxy: {
       "/api": {
-        target: "http://api.ibreath.ezhave.com",
+        target: "https://api.ibreath.ezhave.com",
         changeOrigin: true,
       },
     },
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [react(), mode === "development" && componentTagger()].filter(
+    Boolean,
+  ),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

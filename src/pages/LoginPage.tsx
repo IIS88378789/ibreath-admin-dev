@@ -27,9 +27,9 @@ const LoginPage = () => {
       const data = await login({ userid: userid.trim(), password: password.trim() });
 
       saveToken(data.accessToken);
-      saveUsername(data.username);
+      saveUsername(userid.trim().split("@")[0]);
 
-      toast.success(`歡迎回來，${data.username}！`);
+      toast.success(`歡迎回來！`);
       navigate("/clinics");
     } catch (error) {
       const errorMessage =

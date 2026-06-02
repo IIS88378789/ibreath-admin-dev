@@ -1,4 +1,5 @@
-import { Building2, Users, Wind, Share2, HeartPulse, FileText, ChevronDown } from "lucide-react";
+import { Building2, Users, Wind, Share2, FileText, ChevronDown } from "lucide-react";
+// HeartPulse 留待疾病管理啟用時使用: import { ..., HeartPulse } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import logoWhite from "@/assets/logo-white.png";
@@ -25,17 +26,17 @@ const inhalerSubItems = [
   { title: "吸入器分類", url: "/inhaler-categories" },
 ];
 
-const diseaseSubItems = [
-  { title: "疾病列表", url: "/diseases" },
-  { title: "疾病相關表單", url: "/disease-forms" },
-];
+// const diseaseSubItems = [
+//   { title: "疾病列表", url: "/diseases" },
+//   { title: "疾病相關表單", url: "/disease-forms" },
+// ];
 
 export function AppSidebar() {
   const location = useLocation();
   const isInhalerActive = location.pathname.startsWith("/inhalers") || location.pathname.startsWith("/inhaler-categories");
-  const isDiseaseActive = location.pathname.startsWith("/diseases") || location.pathname.startsWith("/disease-forms");
+  // const isDiseaseActive = location.pathname.startsWith("/diseases") || location.pathname.startsWith("/disease-forms");
   const [inhalerOpen, setInhalerOpen] = useState(isInhalerActive);
-  const [diseaseOpen, setDiseaseOpen] = useState(isDiseaseActive);
+  // const [diseaseOpen, setDiseaseOpen] = useState(isDiseaseActive);
 
   return (
     <Sidebar className="w-56 border-none">
@@ -97,7 +98,7 @@ export function AppSidebar() {
               ))}
 
               {/* 疾病管理 with sub-menu */}
-              <SidebarMenuItem>
+              {/* <SidebarMenuItem>
                 <SidebarMenuButton
                   className="py-3.5 px-4 my-0.5 cursor-pointer"
                   onClick={() => setDiseaseOpen((prev) => !prev)}
@@ -123,7 +124,7 @@ export function AppSidebar() {
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              ))}
+              ))} */}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
