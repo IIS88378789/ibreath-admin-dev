@@ -145,5 +145,12 @@ export async function fetchSalesList(): Promise<SalesListItem[]> {
 export async function fetchDiseasesGroupList(): Promise<DiseasegroupItem[]> {
   const res = await apiFetch("/api/cms/GetDiseasesGroupList");
   if (!res.ok) throw new Error(`疾病群組取得失敗: ${res.status}`);
-  return res.json();
+  const data: { id: number; name: string }[] = await res.json();
+  return data.map((d) => ({
+    value: String(d.id),
+    text: d.name,
+    selected: false,
+    disabled: false,
+    group: null,
+  }));
 }
