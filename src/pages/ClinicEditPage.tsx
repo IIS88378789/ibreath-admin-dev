@@ -176,7 +176,6 @@ export default function ClinicEditPage() {
   const clinicId = id ? Number(id) : null;
 
   const [form, setForm] = useState(defaultForm);
-  const [initialized, setInitialized] = useState(false);
 
   // 業務組別選單
   const { data: salesList = [] } = useQuery({
@@ -197,9 +196,9 @@ export default function ClinicEditPage() {
     enabled: !isNew && clinicId !== null,
   });
 
-  // 當 API 資料回來後初始化表單
+  // 當診所資料與業務組別都載入後初始化表單；clinicId 變動時也重新初始化
   useEffect(() => {
-    if (!isNew && clinicData && !initialized) {
+    if (!isNew && clinicData && salesList.length > 0) {
       setForm({
         name: clinicData.name ?? "",
         isTcma: clinicData.isTcma ?? false,
@@ -218,9 +217,8 @@ export default function ClinicEditPage() {
         lineLoginCallBack: clinicData.lineLoginCallBack ?? "",
         questionnaireURL: clinicData.questionnaireURL ?? "",
       });
-      setInitialized(true);
     }
-  }, [clinicData, isNew, initialized]);
+  }, [clinicId, clinicData, salesList, isNew]);
 
   const createMutation = useMutation({
     mutationFn: createClinic,
